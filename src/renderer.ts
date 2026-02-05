@@ -126,6 +126,7 @@ connectBtn.addEventListener('click', async () => {
         connectionStatus.classList.remove('disconnected');
         connectionStatus.classList.add('connected');
         statusText.textContent = 'Connected';
+        disconnectBtn.style.display = 'inline-block';
 
         updateContainerList();
     } else {
@@ -147,9 +148,29 @@ disconnectBtn.addEventListener('click', async () => {
     connectionStatus.classList.remove('connected');
     connectionStatus.classList.add('disconnected');
     statusText.textContent = 'Disconnected';
+    disconnectBtn.style.display = 'none';
 
     connectionStringInput.value = '';
     currentContainer = null;
+});
+
+// Keyboard Shortcuts
+window.addEventListener('keydown', (e) => {
+    // Cmd/Ctrl + D for Disconnect
+    if ((e.metaKey || e.ctrlKey) && e.code === 'KeyD') {
+        if (explorerSection.style.display !== 'none') {
+            e.preventDefault();
+            disconnectBtn.click();
+        }
+    }
+
+    // Cmd/Ctrl + Enter for Connect
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+        if (connectSection.style.display !== 'none' && !connectBtn.disabled) {
+            e.preventDefault();
+            connectBtn.click();
+        }
+    }
 });
 
 backToContainersBtn.addEventListener('click', () => {

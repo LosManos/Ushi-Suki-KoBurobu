@@ -31,6 +31,8 @@
                 <div class="user-profile">
                     <span id="connection-status" class="status-dot disconnected"></span>
                     <span id="status-text">Disconnected</span>
+                    <button id="disconnect-btn" class="btn btn-secondary btn-sm" style="display: none;"
+                        data-tooltip="Disconnect (Cmd+D)" title="Disconnect (Cmd+D)">Disconnect</button>
                 </div>
             </header>
 
@@ -41,7 +43,9 @@
                     <div class="input-group">
                         <input type="password" id="connection-string"
                             placeholder="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net">
-                        <button id="connect-btn" class="btn btn-primary">Connect Account</button>
+                        <button id="connect-btn" class="btn btn-primary" data-tooltip="Connect Account (Cmd+Enter)"
+                            title="Connect Account (Cmd+Enter)">Connect
+                            Account</button>
                     </div>
                 </div>
             </section>
@@ -93,7 +97,6 @@
 
                 <div class="action-bar">
                     <button id="create-container-btn" class="btn btn-primary">Create New Container</button>
-                    <button id="disconnect-btn" class="btn btn-secondary">Disconnect</button>
                 </div>
             </section>
         </main>
