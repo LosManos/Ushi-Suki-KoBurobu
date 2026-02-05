@@ -131,10 +131,18 @@ connectBtn.addEventListener('click', async () => {
         updateContainerList();
     } else {
         alert('Connection failed: ' + result.error);
+        connectionStringInput.focus();
     }
 
     connectBtn.disabled = false;
     connectBtn.textContent = 'Connect Account';
+});
+
+connectionStringInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        connectBtn.click();
+    }
 });
 
 disconnectBtn.addEventListener('click', async () => {
@@ -152,6 +160,7 @@ disconnectBtn.addEventListener('click', async () => {
 
     connectionStringInput.value = '';
     currentContainer = null;
+    connectionStringInput.focus();
 });
 
 // Keyboard Shortcuts
@@ -188,7 +197,13 @@ document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
+
+        // Focus connection string if Dashboard is clicked and connect section is visible
+        if (item.textContent === 'Dashboard' && connectSection.style.display !== 'none') {
+            connectionStringInput.focus();
+        }
     });
 });
 
 console.log('Renderer initialized');
+connectionStringInput.focus();

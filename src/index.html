@@ -41,8 +41,9 @@
                     <h3>Connect to Azure</h3>
                     <p>Enter your Azure Storage Connection String to begin exploring your blobs.</p>
                     <div class="input-group">
-                        <input type="password" id="connection-string"
-                            placeholder="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net">
+                        <input type="password" id="connection-string" autofocus
+                            placeholder="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net"
+                            data-tooltip="Press Enter to connect" title="Press Enter to connect">
                         <button id="connect-btn" class="btn btn-primary" data-tooltip="Connect Account (Cmd+Enter)"
                             title="Connect Account (Cmd+Enter)">Connect
                             Account</button>

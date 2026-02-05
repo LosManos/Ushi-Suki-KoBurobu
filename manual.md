@@ -14,7 +14,7 @@ The following shortcuts are available to speed up your workflow:
 
 | Shortcut | Action |
 | --- | --- |
-| `Cmd + Enter` / `Ctrl + Enter` | Connect Account (from Dashboard) |
+| `Enter` | Connect Account (when focused on Connection String) |
 | `Cmd + D` / `Ctrl + D` | Disconnect from Storage Account |
 | `Shift + Enter` | Execute Query (in Query Editor mode) |
 
