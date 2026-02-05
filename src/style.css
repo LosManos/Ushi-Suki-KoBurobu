@@ -159,12 +159,55 @@ input[type="password"]:focus {
     border-color: var(--accent);
 }
 
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.search-group {
+    display: flex;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid var(--glass-border);
+    /* Changed from --border-color to --glass-border */
+}
+
+.form-control {
+    background: transparent;
+    border: none;
+    color: white;
+    padding: 6px 12px;
+    font-size: 0.9rem;
+    outline: none;
+}
+
+.search-group .form-control:focus {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+
+.delimiter-input {
+    width: 40px;
+    text-align: center;
+    border-left: 1px solid var(--glass-border) !important;
+    /* Changed from --border-color to --glass-border */
+    border-right: 1px solid var(--glass-border) !important;
+    /* Changed from --border-color to --glass-border */
+    border-radius: 0 !important;
+}
+
 .form-select {
     background: var(--bg-dark);
+    /* Changed from --bg-card to --bg-dark */
     border: 1px solid var(--glass-border);
+    /* Changed from --border-color to --glass-border */
     padding: 6px 10px;
     border-radius: 8px;
     color: var(--text-primary);
+    /* Changed from white to --text-primary */
     font-size: 0.85rem;
     outline: none;
     cursor: pointer;
@@ -173,6 +216,7 @@ input[type="password"]:focus {
 
 .form-select:focus {
     border-color: var(--accent);
+    /* Changed from --primary-color to --accent */
 }
 
 .form-select:hover {

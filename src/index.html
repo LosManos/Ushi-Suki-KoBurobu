@@ -88,13 +88,21 @@
                         <div class="list-header">
                             <h3>Blobs</h3>
                             <div class="header-actions">
+                                <div class="search-group">
+                                    <input type="text" id="blob-search-input" class="form-control"
+                                        placeholder="Search prefix..." data-tooltip="Search (Cmd+F)"
+                                        title="Search (Cmd+F)">
+                                    <input type="text" id="blob-delimiter-input" class="form-control delimiter-input"
+                                        placeholder="/" value="/" title="Delimiter">
+                                    <button id="search-blobs-btn" class="btn btn-primary btn-sm">Find</button>
+                                </div>
                                 <select id="page-size-select" class="form-select" data-tooltip="Page Size (P)"
                                     title="Page Size (P)">
                                     <option value="10">10</option>
                                     <option value="100" selected>100</option>
                                     <option value="1000">1000</option>
                                 </select>
-                                <button id="upload-blob-btn" class="btn btn-primary btn-sm">Upload Blob</button>
+                                <button id="upload-blob-btn" class="btn btn-primary btn-sm">Upload</button>
                                 <button id="refresh-blobs-btn" class="btn btn-secondary btn-sm"
                                     data-tooltip="Refresh (R)" title="Refresh (R)">Refresh</button>
                             </div>

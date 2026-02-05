@@ -60,34 +60,64 @@ app.whenReady().then(() => {
         }
     });
 
-    ipcMain.handle('azure:listBlobs', async (_event, containerName: string, pageSize: number = 100, continuationToken?: string) => {
+    ipcMain.handle('azure:listBlobs', async (_event, containerName: string, pageSize: number = 100, continuationToken?: string, prefix?: string, delimiter?: string) => {
         if (!blobServiceClient) return { success: false, error: 'Not connected' };
         try {
             const containerClient = blobServiceClient.getContainerClient(containerName);
             const blobs = [];
 
-            // Fetch the page (optionally with continuation token)
-            const iterator = containerClient.listBlobsFlat().byPage({
-                maxPageSize: pageSize,
-                continuationToken: continuationToken
-            });
+            let iterator;
+            if (delimiter) {
+                // Hierarchical listing
+                iterator = containerClient.listBlobsByHierarchy(delimiter, { prefix }).byPage({
+                    maxPageSize: pageSize,
+                    continuationToken: continuationToken
+                });
+            } else {
+                // Flat listing
+                iterator = containerClient.listBlobsFlat({ prefix }).byPage({
+                    maxPageSize: pageSize,
+                    continuationToken: continuationToken
+                });
+            }
+
             const response = await iterator.next();
 
             let nextContinuationToken = undefined;
             if (!response.done && response.value) {
                 nextContinuationToken = response.value.continuationToken;
-                for (const blob of response.value.segment.blobItems) {
-                    blobs.push({
-                        name: blob.name,
-                        size: blob.properties.contentLength,
-                        lastModified: blob.properties.lastModified,
-                        type: blob.properties.contentType
-                    });
+
+                // Handle blobs/segments
+                const segment = response.value.segment as any;
+
+                // Add prefixes (directories) if using hierarchical listing
+                if (segment.blobPrefixes) {
+                    for (const prefixItem of segment.blobPrefixes) {
+                        blobs.push({
+                            name: prefixItem.name,
+                            type: 'directory',
+                            size: 0,
+                            lastModified: new Date()
+                        });
+                    }
+                }
+
+                // Add actual blobs
+                if (segment.blobItems) {
+                    for (const blob of segment.blobItems) {
+                        blobs.push({
+                            name: blob.name,
+                            size: blob.properties.contentLength,
+                            lastModified: blob.properties.lastModified,
+                            type: blob.properties.contentType || 'blob'
+                        });
+                    }
                 }
             }
 
             return { success: true, blobs, hasMore: !!nextContinuationToken, continuationToken: nextContinuationToken };
         } catch (error: any) {
+            console.error('List Blobs Error:', error);
             return { success: false, error: error.message };
         }
     });

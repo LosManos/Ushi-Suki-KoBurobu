@@ -23,6 +23,7 @@ The following shortcuts are available to speed up your workflow:
 | `Backspace` | Go back to Container List (when in Blob View) |
 | `R` | Refresh current list (Containers or Blobs) |
 | `P` | Focus Page Size dropdown (in Blob View) |
+| `Cmd + F` / `Ctrl + F` | Search/Filter Blobs (in Blob View) |
 
 ## Navigation
 

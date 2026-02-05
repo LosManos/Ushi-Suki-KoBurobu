@@ -11,6 +11,9 @@ const refreshContainersBtn = document.getElementById('refresh-containers-btn') a
 const refreshBlobsBtn = document.getElementById('refresh-blobs-btn') as HTMLButtonElement;
 const pageSizeSelect = document.getElementById('page-size-select') as HTMLSelectElement;
 const backToContainersBtn = document.getElementById('back-to-containers') as HTMLButtonElement;
+const blobSearchInput = document.getElementById('blob-search-input') as HTMLInputElement;
+const blobDelimiterInput = document.getElementById('blob-delimiter-input') as HTMLInputElement;
+const searchBlobsBtn = document.getElementById('search-blobs-btn') as HTMLButtonElement;
 
 const containerList = document.getElementById('container-list') as HTMLUListElement;
 const blobList = document.getElementById('blob-list') as HTMLUListElement;
@@ -101,7 +104,10 @@ async function updateBlobList(isLoadMore = false) {
     }
 
     const pageSize = parseInt(pageSizeSelect.value) || 100;
-    const result = await api.listBlobs(currentContainer, pageSize, currentContinuationToken);
+    const prefix = blobSearchInput.value.trim() || undefined;
+    const delimiter = blobDelimiterInput.value.trim() || undefined;
+
+    const result = await api.listBlobs(currentContainer, pageSize, currentContinuationToken, prefix, delimiter);
 
     // Remove loading more indicator
     const loadingMore = blobList.querySelector('.loading-more-indicator');
@@ -120,22 +126,34 @@ async function updateBlobList(isLoadMore = false) {
                 li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to select');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <span>📄</span>
+                        <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
                         <div style="display: flex; flex-direction: column;">
                             <span>${blob.name}</span>
                             <span class="text-secondary" style="font-size: 0.7rem">${blob.type || 'unknown'}</span>
                         </div>
                     </div>
                     <div style="text-align: right;">
-                        <span class="text-secondary" style="font-size: 0.8rem; display: block;">${formatBytes(blob.size)}</span>
-                        <span class="text-secondary" style="font-size: 0.7rem">${new Date(blob.lastModified).toLocaleDateString()}</span>
+                        <span class="text-secondary" style="font-size: 0.8rem; display: block;">${blob.type === 'directory' ? '--' : formatBytes(blob.size)}</span>
+                        <span class="text-secondary" style="font-size: 0.7rem">${blob.type === 'directory' ? '--' : new Date(blob.lastModified).toLocaleDateString()}</span>
                     </div>
                 `;
-                li.onclick = () => console.log('Selected blob:', blob.name);
+                li.onclick = () => {
+                    if (blob.type === 'directory') {
+                        blobSearchInput.value = blob.name;
+                        updateBlobList();
+                    } else {
+                        console.log('Selected blob:', blob.name);
+                    }
+                };
                 li.onkeydown = (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        console.log('Selected blob:', blob.name);
+                        if (blob.type === 'directory') {
+                            blobSearchInput.value = blob.name;
+                            updateBlobList();
+                        } else {
+                            console.log('Selected blob:', blob.name);
+                        }
                     }
                 };
                 blobList.appendChild(li);
@@ -311,6 +329,15 @@ window.addEventListener('keydown', (e) => {
             }
         }
     }
+
+    // Cmd/Ctrl + F for Search
+    if ((e.metaKey || e.ctrlKey) && e.code === 'KeyF') {
+        if (blobView.style.display !== 'none') {
+            e.preventDefault();
+            blobSearchInput.focus();
+            blobSearchInput.select();
+        }
+    }
 });
 
 backToContainersBtn.addEventListener('click', () => {
@@ -322,6 +349,20 @@ backToContainersBtn.addEventListener('click', () => {
 
 refreshContainersBtn.addEventListener('click', updateContainerList);
 refreshBlobsBtn.addEventListener('click', () => updateBlobList());
+
+searchBlobsBtn.addEventListener('click', () => updateBlobList());
+blobSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        updateBlobList();
+    }
+});
+blobDelimiterInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        updateBlobList();
+    }
+});
 
 pageSizeSelect.addEventListener('change', () => {
     if (currentContainer) {
