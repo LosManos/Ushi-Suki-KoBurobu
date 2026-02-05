@@ -9,6 +9,7 @@ const connectBtn = document.getElementById('connect-btn') as HTMLButtonElement;
 const disconnectBtn = document.getElementById('disconnect-btn') as HTMLButtonElement;
 const refreshContainersBtn = document.getElementById('refresh-containers-btn') as HTMLButtonElement;
 const refreshBlobsBtn = document.getElementById('refresh-blobs-btn') as HTMLButtonElement;
+const pageSizeSelect = document.getElementById('page-size-select') as HTMLSelectElement;
 const backToContainersBtn = document.getElementById('back-to-containers') as HTMLButtonElement;
 
 const containerList = document.getElementById('container-list') as HTMLUListElement;
@@ -23,6 +24,7 @@ const statusText = document.getElementById('status-text') as HTMLElement;
 const api = (window as any).electronAPI;
 
 let currentContainer: string | null = null;
+let currentContinuationToken: string | undefined = undefined;
 
 function formatBytes(bytes: number, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -81,17 +83,36 @@ async function openContainer(name: string) {
     updateBlobList();
 }
 
-async function updateBlobList() {
+async function updateBlobList(isLoadMore = false) {
     if (!currentContainer) return;
 
-    blobList.innerHTML = '<li class="list-item empty">Loading blobs...</li>';
+    if (!isLoadMore) {
+        blobList.innerHTML = '<li class="list-item empty">Loading blobs...</li>';
+        currentContinuationToken = undefined;
+    } else {
+        // Remove the "Load More" item if it exists
+        const moreItem = blobList.querySelector('.load-more-item');
+        if (moreItem) moreItem.remove();
 
-    const result = await api.listBlobs(currentContainer);
+        const loadingLi = document.createElement('li');
+        loadingLi.className = 'list-item empty loading-more-indicator';
+        loadingLi.innerHTML = '<span>Loading more...</span>';
+        blobList.appendChild(loadingLi);
+    }
+
+    const pageSize = parseInt(pageSizeSelect.value) || 100;
+    const result = await api.listBlobs(currentContainer, pageSize, currentContinuationToken);
+
+    // Remove loading more indicator
+    const loadingMore = blobList.querySelector('.loading-more-indicator');
+    if (loadingMore) loadingMore.remove();
+
     if (result.success) {
-        if (result.blobs.length === 0) {
+        if (!isLoadMore && result.blobs.length === 0) {
             blobList.innerHTML = '<li class="list-item empty">No blobs found in this container.</li>';
         } else {
-            blobList.innerHTML = '';
+            if (!isLoadMore) blobList.innerHTML = '';
+
             result.blobs.forEach((blob: any) => {
                 const li = document.createElement('li');
                 li.className = 'list-item';
@@ -120,9 +141,37 @@ async function updateBlobList() {
                 blobList.appendChild(li);
             });
 
-            // Focus first item to enable immediate keyboard navigation
-            const firstItem = blobList.querySelector('.list-item') as HTMLElement;
-            if (firstItem) firstItem.focus();
+            currentContinuationToken = result.continuationToken;
+
+            if (result.hasMore) {
+                const moreLi = document.createElement('li');
+                moreLi.className = 'list-item empty load-more-item';
+                moreLi.style.fontSize = '0.8rem';
+                moreLi.style.borderStyle = 'dashed';
+                moreLi.style.cursor = 'pointer';
+                moreLi.tabIndex = 0;
+                moreLi.setAttribute('data-tooltip', 'Click or Enter to load more');
+                moreLi.innerHTML = `<span>More items available. Click to load more...</span>`;
+                moreLi.onclick = () => updateBlobList(true);
+                moreLi.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        updateBlobList(true);
+                    }
+                };
+                blobList.appendChild(moreLi);
+            }
+
+            if (!isLoadMore) {
+                // Focus first item to enable immediate keyboard navigation
+                const firstItem = blobList.querySelector('.list-item') as HTMLElement;
+                if (firstItem) firstItem.focus();
+            } else {
+                // Focus the first newly added item or the load more button if still present
+                const items = blobList.querySelectorAll('.list-item');
+                const lastItems = Array.from(items).slice(-result.blobs.length - (result.hasMore ? 1 : 0));
+                if (lastItems.length > 0) (lastItems[0] as HTMLElement).focus();
+            }
         }
     } else {
         blobList.innerHTML = `<li class="list-item empty text-danger">Error: ${result.error}</li>`;
@@ -236,6 +285,32 @@ window.addEventListener('keydown', (e) => {
             }
         }
     }
+
+    // Refresh with 'R'
+    if (e.key === 'r' || e.key === 'R') {
+        const activeElement = document.activeElement;
+        if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA' && activeElement?.tagName !== 'SELECT') {
+            if (explorerSection.style.display !== 'none') {
+                e.preventDefault();
+                if (blobView.style.display !== 'none') {
+                    refreshBlobsBtn.click();
+                } else {
+                    refreshContainersBtn.click();
+                }
+            }
+        }
+    }
+
+    // Focus Page Size with 'P'
+    if (e.key === 'p' || e.key === 'P') {
+        const activeElement = document.activeElement;
+        if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA' && activeElement?.tagName !== 'SELECT') {
+            if (blobView.style.display !== 'none') {
+                e.preventDefault();
+                pageSizeSelect.focus();
+            }
+        }
+    }
 });
 
 backToContainersBtn.addEventListener('click', () => {
@@ -246,7 +321,13 @@ backToContainersBtn.addEventListener('click', () => {
 });
 
 refreshContainersBtn.addEventListener('click', updateContainerList);
-refreshBlobsBtn.addEventListener('click', updateBlobList);
+refreshBlobsBtn.addEventListener('click', () => updateBlobList());
+
+pageSizeSelect.addEventListener('change', () => {
+    if (currentContainer) {
+        updateBlobList();
+    }
+});
 
 // Tab switching (sidebar)
 document.querySelectorAll('.nav-item').forEach(item => {

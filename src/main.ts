@@ -60,20 +60,33 @@ app.whenReady().then(() => {
         }
     });
 
-    ipcMain.handle('azure:listBlobs', async (_event, containerName: string) => {
+    ipcMain.handle('azure:listBlobs', async (_event, containerName: string, pageSize: number = 100, continuationToken?: string) => {
         if (!blobServiceClient) return { success: false, error: 'Not connected' };
         try {
             const containerClient = blobServiceClient.getContainerClient(containerName);
             const blobs = [];
-            for await (const blob of containerClient.listBlobsFlat()) {
-                blobs.push({
-                    name: blob.name,
-                    size: blob.properties.contentLength,
-                    lastModified: blob.properties.lastModified,
-                    type: blob.properties.contentType
-                });
+
+            // Fetch the page (optionally with continuation token)
+            const iterator = containerClient.listBlobsFlat().byPage({
+                maxPageSize: pageSize,
+                continuationToken: continuationToken
+            });
+            const response = await iterator.next();
+
+            let nextContinuationToken = undefined;
+            if (!response.done && response.value) {
+                nextContinuationToken = response.value.continuationToken;
+                for (const blob of response.value.segment.blobItems) {
+                    blobs.push({
+                        name: blob.name,
+                        size: blob.properties.contentLength,
+                        lastModified: blob.properties.lastModified,
+                        type: blob.properties.contentType
+                    });
+                }
             }
-            return { success: true, blobs };
+
+            return { success: true, blobs, hasMore: !!nextContinuationToken, continuationToken: nextContinuationToken };
         } catch (error: any) {
             return { success: false, error: error.message };
         }

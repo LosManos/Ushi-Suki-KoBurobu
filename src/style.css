@@ -159,6 +159,26 @@ input[type="password"]:focus {
     border-color: var(--accent);
 }
 
+.form-select {
+    background: var(--bg-dark);
+    border: 1px solid var(--glass-border);
+    padding: 6px 10px;
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus {
+    border-color: var(--accent);
+}
+
+.form-select:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Data List */
 .container-list-wrapper {
     background: var(--glass-bg);

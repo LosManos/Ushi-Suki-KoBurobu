@@ -7,6 +7,7 @@ KoBurobu is a streamlined Azure Blob Storage Explorer.
 1. **Connect to Azure**: Enter your Azure Storage Connection String in the input field on the Dashboard.
 2. **Explore Containers**: Once connected, you will see a list of your containers. Click on a container to view its blobs.
 3. **Manage Blobs**: You can upload new blobs or refresh the list to see the latest changes.
+4. **Pagination**: Large containers are loaded in pages. Use the dropdown next to the Refresh button to set the page size (10, 100, or 1000 items). If more items are available, a "More items available" indicator will appear at the bottom—click it or press Enter to fetch the next page. Only the first page is fetched initially for performance.
 
 ## Keyboard Shortcuts
 
@@ -20,6 +21,8 @@ The following shortcuts are available to speed up your workflow:
 | `↑` / `↓` | Navigate through container or blob lists |
 | `Enter` | Open selected container or select blob in lists |
 | `Backspace` | Go back to Container List (when in Blob View) |
+| `R` | Refresh current list (Containers or Blobs) |
+| `P` | Focus Page Size dropdown (in Blob View) |
 
 ## Navigation
 
