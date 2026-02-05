@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,8 +8,10 @@
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@400;700&display=swap"
+        rel="stylesheet">
 </head>
+
 <body>
     <div class="app-container">
         <aside class="sidebar">
@@ -26,35 +29,54 @@
             <header class="top-bar">
                 <h2>Azure Blob Storage Explorer</h2>
                 <div class="user-profile">
-                    <span class="status-dot"></span> Connected
+                    <span id="connection-status" class="status-dot disconnected"></span>
+                    <span id="status-text">Disconnected</span>
                 </div>
             </header>
-            <section class="dashboard">
+
+            <section id="connect-section" class="dashboard">
                 <div class="welcome-card">
-                    <h3>Welcome to KoBurobu</h3>
-                    <p>Efficiently handle your Azure blob storage with ease and speed.</p>
+                    <h3>Connect to Azure</h3>
+                    <p>Enter your Azure Storage Connection String to begin exploring your blobs.</p>
+                    <div class="input-group">
+                        <input type="password" id="connection-string"
+                            placeholder="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net">
+                        <button id="connect-btn" class="btn btn-primary">Connect Account</button>
+                    </div>
                 </div>
+            </section>
+
+            <section id="explorer-section" class="dashboard" style="display: none;">
                 <div class="stats-grid">
                     <div class="stat-card">
                         <label>Containers</label>
-                        <div class="value">12</div>
+                        <div id="container-count" class="value">0</div>
                     </div>
                     <div class="stat-card">
-                        <label>Total Blobs</label>
-                        <div class="value">1,245</div>
-                    </div>
-                    <div class="stat-card">
-                        <label>Storage Used</label>
-                        <div class="value">4.2 GB</div>
+                        <label>Storage Account</label>
+                        <div id="account-name" class="value">None</div>
                     </div>
                 </div>
+
+                <div class="container-list-wrapper">
+                    <div class="list-header">
+                        <h3>Containers</h3>
+                        <button id="refresh-btn" class="btn btn-secondary btn-sm">Refresh</button>
+                    </div>
+                    <ul id="container-list" class="data-list">
+                        <!-- Containers will be injected here -->
+                        <li class="list-item empty">No containers found. Connect to an account first.</li>
+                    </ul>
+                </div>
+
                 <div class="action-bar">
                     <button class="btn btn-primary">Create New Container</button>
-                    <button class="btn btn-secondary">Refresh</button>
+                    <button id="disconnect-btn" class="btn btn-secondary">Disconnect</button>
                 </div>
             </section>
         </main>
     </div>
     <script src="renderer.js"></script>
 </body>
+
 </html>

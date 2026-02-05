@@ -4,7 +4,7 @@
   "description": "This project is for handling blob storage in Azure",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp src/index.html dist/index.html && cp src/style.css dist/style.css",
     "watch": "tsc -w",
     "start": "npm run build && electron .",
     "dev": "npm run build && electron ."
@@ -15,5 +15,8 @@
   "devDependencies": {
     "electron": "^40.0.0",
     "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@azure/storage-blob": "^12.30.0"
   }
 }
