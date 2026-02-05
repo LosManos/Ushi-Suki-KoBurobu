@@ -17,6 +17,9 @@ The following shortcuts are available to speed up your workflow:
 | `Enter` | Connect Account (when focused on Connection String) |
 | `Cmd + D` / `Ctrl + D` | Disconnect from Storage Account |
 | `Shift + Enter` | Execute Query (in Query Editor mode) |
+| `↑` / `↓` | Navigate through container or blob lists |
+| `Enter` | Open selected container or select blob in lists |
+| `Backspace` | Go back to Container List (when in Blob View) |
 
 ## Navigation
 

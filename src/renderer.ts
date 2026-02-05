@@ -46,6 +46,8 @@ async function updateContainerList() {
             result.containers.forEach((container: any) => {
                 const li = document.createElement('li');
                 li.className = 'list-item';
+                li.tabIndex = 0;
+                li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to open');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>📁</span>
@@ -54,8 +56,17 @@ async function updateContainerList() {
                     <span class="text-secondary" style="font-size: 0.8rem">${new Date(container.lastModified).toLocaleDateString()}</span>
                 `;
                 li.onclick = () => openContainer(container.name);
+                li.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        openContainer(container.name);
+                    }
+                };
                 containerList.appendChild(li);
             });
+            // Focus first item to enable immediate keyboard navigation
+            const firstItem = containerList.querySelector('.list-item') as HTMLElement;
+            if (firstItem) firstItem.focus();
         }
     } else {
         containerList.innerHTML = `<li class="list-item empty text-danger">Error: ${result.error}</li>`;
@@ -84,6 +95,8 @@ async function updateBlobList() {
             result.blobs.forEach((blob: any) => {
                 const li = document.createElement('li');
                 li.className = 'list-item';
+                li.tabIndex = 0;
+                li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to select');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>📄</span>
@@ -98,8 +111,18 @@ async function updateBlobList() {
                     </div>
                 `;
                 li.onclick = () => console.log('Selected blob:', blob.name);
+                li.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        console.log('Selected blob:', blob.name);
+                    }
+                };
                 blobList.appendChild(li);
             });
+
+            // Focus first item to enable immediate keyboard navigation
+            const firstItem = blobList.querySelector('.list-item') as HTMLElement;
+            if (firstItem) firstItem.focus();
         }
     } else {
         blobList.innerHTML = `<li class="list-item empty text-danger">Error: ${result.error}</li>`;
@@ -178,6 +201,39 @@ window.addEventListener('keydown', (e) => {
         if (connectSection.style.display !== 'none' && !connectBtn.disabled) {
             e.preventDefault();
             connectBtn.click();
+        }
+    }
+    // List Navigation (ArrowUp/ArrowDown)
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        const activeElement = document.activeElement;
+        if (activeElement && activeElement.classList.contains('list-item')) {
+            e.preventDefault();
+            const parent = activeElement.parentElement;
+            if (parent) {
+                const items = Array.from(parent.querySelectorAll('.list-item')) as HTMLElement[];
+                const currentIndex = items.indexOf(activeElement as HTMLElement);
+                let nextIndex = currentIndex;
+
+                if (e.key === 'ArrowDown') {
+                    nextIndex = Math.min(items.length - 1, currentIndex + 1);
+                } else {
+                    nextIndex = Math.max(0, currentIndex - 1);
+                }
+
+                items[nextIndex].focus();
+            }
+        }
+    }
+
+    // Backspace to go back to containers
+    if (e.key === 'Backspace') {
+        if (blobView.style.display !== 'none') {
+            const activeElement = document.activeElement;
+            // Check if focus is NOT in an input/textarea to avoid breaking text editing
+            if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                backToContainersBtn.click();
+            }
         }
     }
 });
