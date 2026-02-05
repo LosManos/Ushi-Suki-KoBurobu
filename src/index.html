@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KoBurobu - Azure Blob Explorer</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <span class="logo-icon">📦</span>
+                <h1>KoBurobu</h1>
+            </div>
+            <nav>
+                <button class="nav-item active">Dashboard</button>
+                <button class="nav-item">Containers</button>
+                <button class="nav-item">Settings</button>
+            </nav>
+        </aside>
+        <main class="content">
+            <header class="top-bar">
+                <h2>Azure Blob Storage Explorer</h2>
+                <div class="user-profile">
+                    <span class="status-dot"></span> Connected
+                </div>
+            </header>
+            <section class="dashboard">
+                <div class="welcome-card">
+                    <h3>Welcome to KoBurobu</h3>
+                    <p>Efficiently handle your Azure blob storage with ease and speed.</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <label>Containers</label>
+                        <div class="value">12</div>
+                    </div>
+                    <div class="stat-card">
+                        <label>Total Blobs</label>
+                        <div class="value">1,245</div>
+                    </div>
+                    <div class="stat-card">
+                        <label>Storage Used</label>
+                        <div class="value">4.2 GB</div>
+                    </div>
+                </div>
+                <div class="action-bar">
+                    <button class="btn btn-primary">Create New Container</button>
+                    <button class="btn btn-secondary">Refresh</button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="renderer.js"></script>
+</body>
+</html>
