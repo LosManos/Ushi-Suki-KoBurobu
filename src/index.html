@@ -58,19 +58,41 @@
                     </div>
                 </div>
 
-                <div class="container-list-wrapper">
-                    <div class="list-header">
-                        <h3>Containers</h3>
-                        <button id="refresh-btn" class="btn btn-secondary btn-sm">Refresh</button>
+                <div id="container-view">
+                    <div class="container-list-wrapper">
+                        <div class="list-header">
+                            <h3>Containers</h3>
+                            <button id="refresh-containers-btn" class="btn btn-secondary btn-sm">Refresh</button>
+                        </div>
+                        <ul id="container-list" class="data-list">
+                            <!-- Containers will be injected here -->
+                            <li class="list-item empty">No containers found.</li>
+                        </ul>
                     </div>
-                    <ul id="container-list" class="data-list">
-                        <!-- Containers will be injected here -->
-                        <li class="list-item empty">No containers found. Connect to an account first.</li>
-                    </ul>
+                </div>
+
+                <div id="blob-view" style="display: none;">
+                    <div class="breadcrumb">
+                        <button id="back-to-containers" class="btn btn-link">← Back to Containers</button>
+                        <h3 id="current-container-name">Container Name</h3>
+                    </div>
+                    <div class="container-list-wrapper">
+                        <div class="list-header">
+                            <h3>Blobs</h3>
+                            <div class="header-actions">
+                                <button id="upload-blob-btn" class="btn btn-primary btn-sm">Upload Blob</button>
+                                <button id="refresh-blobs-btn" class="btn btn-secondary btn-sm">Refresh</button>
+                            </div>
+                        </div>
+                        <ul id="blob-list" class="data-list">
+                            <!-- Blobs will be injected here -->
+                            <li class="list-item empty">No blobs found in this container.</li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="action-bar">
-                    <button class="btn btn-primary">Create New Container</button>
+                    <button id="create-container-btn" class="btn btn-primary">Create New Container</button>
                     <button id="disconnect-btn" class="btn btn-secondary">Disconnect</button>
                 </div>
             </section>

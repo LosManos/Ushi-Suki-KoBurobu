@@ -60,6 +60,25 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:listBlobs', async (_event, containerName: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const blobs = [];
+            for await (const blob of containerClient.listBlobsFlat()) {
+                blobs.push({
+                    name: blob.name,
+                    size: blob.properties.contentLength,
+                    lastModified: blob.properties.lastModified,
+                    type: blob.properties.contentType
+                });
+            }
+            return { success: true, blobs };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
