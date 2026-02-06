@@ -32,6 +32,11 @@ const itemCountLabel = document.getElementById('item-count') as HTMLElement;
 const blobListStats = document.getElementById('blob-list-stats') as HTMLElement;
 const containerCountCard = document.querySelector('.stat-card') as HTMLElement; // First card
 
+const modalOverlay = document.getElementById('modal-overlay') as HTMLElement;
+const modalContent = document.getElementById('modal-content') as HTMLElement;
+const closeModalBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
+const modalOkBtn = document.getElementById('modal-ok-btn') as HTMLButtonElement;
+
 // Electron API (from preload)
 const api = (window as any).electronAPI;
 
@@ -77,6 +82,7 @@ async function updateContainerList() {
                 const li = document.createElement('li');
                 li.className = 'list-item';
                 li.tabIndex = 0;
+                li.setAttribute('data-container-name', container.name);
                 li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to open, Cmd+I to count');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
@@ -96,12 +102,6 @@ async function updateContainerList() {
                         return;
                     }
                     openContainer(container.name);
-                };
-                li.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        openContainer(container.name);
-                    }
                 };
                 containerList.appendChild(li);
             });
@@ -241,6 +241,102 @@ function countLoadedItems() {
     }
 }
 
+async function showBlobProperties(blobName: string) {
+    if (!currentContainer) return;
+
+    modalContent.innerHTML = '<div class="text-secondary">Fetching properties...</div>';
+    modalOverlay.style.display = 'flex';
+    modalContent.focus(); // Focus for scrolling
+
+    const result = await api.getBlobProperties(currentContainer, blobName);
+
+    if (result.success) {
+        const props = result.properties;
+        let metadataHtml = '';
+        if (props.metadata && Object.keys(props.metadata).length > 0) {
+            const rows = Object.entries(props.metadata).map(([key, value]) => `
+                <tr>
+                    <td>${key}</td>
+                    <td>${value}</td>
+                </tr>
+            `).join('');
+
+            metadataHtml = `
+                <div class="metadata-section">
+                    <span class="property-label" style="margin-bottom: 8px; display: block;">Metadata</span>
+                    <table class="metadata-table">
+                        <thead>
+                            <tr>
+                                <th>Key</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rows}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+
+        modalContent.innerHTML = `
+            <div class="property-grid">
+                <div class="property-item">
+                    <span class="property-label">Name</span>
+                    <span class="property-value" style="font-weight: 600;">${props.name}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Content Type</span>
+                    <span class="property-value">${props.contentType}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Content-MD5</span>
+                    <span class="property-value" style="font-size: 0.8rem; font-family: monospace;">${props.contentMD5 || ''}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Size</span>
+                    <span class="property-value">${formatBytes(props.contentLength)}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Access Tier</span>
+                    <span class="property-value">${props.accessTier || ''}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Blob Type</span>
+                    <span class="property-value">${props.blobType}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Created On</span>
+                    <span class="property-value">${formatDateTime(props.createdOn)}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Last Modified</span>
+                    <span class="property-value">${formatDateTime(props.lastModified)}</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">ETag</span>
+                    <span class="property-value" style="font-size: 0.7rem; font-family: monospace;">${props.etag}</span>
+                </div>
+                ${metadataHtml}
+            </div>
+        `;
+        // Refocus after content update
+        modalContent.focus();
+    } else {
+        modalContent.innerHTML = `<div class="text-danger">Error: ${result.error}</div>`;
+        modalContent.focus();
+    }
+}
+
+function closeModal() {
+    modalOverlay.style.display = 'none';
+    // Return focus to the list item if possible
+    const lastFocused = document.querySelector('.list-item:focus') as HTMLElement;
+    if (lastFocused) {
+        lastFocused.focus();
+    }
+}
+
 async function updateBlobList(isLoadMore = false) {
     if (!currentContainer) return;
 
@@ -288,7 +384,9 @@ async function updateBlobList(isLoadMore = false) {
                 const li = document.createElement('li');
                 li.className = 'list-item';
                 li.tabIndex = 0;
-                li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to select, Cmd+I to count folder');
+                li.setAttribute('data-blob-name', blob.name);
+                li.setAttribute('data-blob-type', blob.type === 'directory' ? 'directory' : 'file');
+                li.setAttribute('data-tooltip', blob.type === 'directory' ? '↑↓ to navigate, Enter to select, Cmd+I to count folder' : '↑↓ to navigate, Enter to select, Cmd+I for properties');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
@@ -317,18 +415,7 @@ async function updateBlobList(isLoadMore = false) {
                         blobSearchInput.value = blob.name;
                         updateBlobList();
                     } else {
-                        console.log('Selected blob:', blob.name);
-                    }
-                };
-                li.onkeydown = (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        if (blob.type === 'directory') {
-                            blobSearchInput.value = blob.name;
-                            updateBlobList();
-                        } else {
-                            console.log('Selected blob:', blob.name);
-                        }
+                        showBlobProperties(blob.name);
                     }
                 };
                 blobList.appendChild(li);
@@ -433,6 +520,15 @@ disconnectBtn.addEventListener('click', async () => {
 
 // Keyboard Shortcuts
 window.addEventListener('keydown', (e) => {
+    // Modal Keyboard Navigation
+    if (modalOverlay.style.display === 'flex') {
+        if (e.key === 'Escape' || e.key === 'Enter') {
+            e.preventDefault();
+            closeModal();
+            return;
+        }
+    }
+
     // Cmd/Ctrl + D for Disconnect
     if ((e.metaKey || e.ctrlKey) && e.code === 'KeyD') {
         if (explorerSection.style.display !== 'none' || settingsSection.style.display !== 'none') {
@@ -460,8 +556,33 @@ window.addEventListener('keydown', (e) => {
         if (connectSection.style.display !== 'none' && !connectBtn.disabled) {
             e.preventDefault();
             connectBtn.click();
+            return;
         }
     }
+
+    // List Item Interactions (Enter)
+    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+        const activeElement = document.activeElement as HTMLElement;
+        if (activeElement && activeElement.classList.contains('list-item')) {
+            e.preventDefault();
+            const blobName = activeElement.getAttribute('data-blob-name');
+            const blobType = activeElement.getAttribute('data-blob-type');
+
+            if (blobView.style.display !== 'none' && blobName) {
+                if (blobType === 'directory') {
+                    blobSearchInput.value = blobName;
+                    updateBlobList();
+                } else {
+                    showBlobProperties(blobName);
+                }
+            } else if (containerView.style.display !== 'none') {
+                const containerName = activeElement.getAttribute('data-container-name');
+                if (containerName) openContainer(containerName);
+            }
+            return;
+        }
+    }
+
     // List Navigation (ArrowUp/ArrowDown)
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
         const activeElement = document.activeElement;
@@ -531,7 +652,7 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // Cmd/Ctrl + I for Blob Counter
+    // Cmd/Ctrl + I for Blob Counter or Properties
     if ((e.metaKey || e.ctrlKey) && e.code === 'KeyI') {
         e.preventDefault();
         const activeElement = document.activeElement as HTMLElement;
@@ -542,14 +663,27 @@ window.addEventListener('keydown', (e) => {
             if (countTrigger) {
                 countTrigger.click();
             } else {
-                // If it's a file or item without count trigger, count all loaded items on client
-                countLoadedItems();
+                // Check if it's a blob file
+                const blobName = activeElement.getAttribute('data-blob-name');
+                const blobType = activeElement.getAttribute('data-blob-type');
+                if (blobName && blobType === 'file') {
+                    showBlobProperties(blobName);
+                } else {
+                    // Otherwise count all loaded items on client
+                    countLoadedItems();
+                }
             }
         } else {
             // Nothing specific focused, count all loaded items
             countLoadedItems();
         }
     }
+});
+
+closeModalBtn.addEventListener('click', closeModal);
+modalOkBtn.addEventListener('click', closeModal);
+modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
 });
 
 backToContainersBtn.addEventListener('click', () => {
