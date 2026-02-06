@@ -521,6 +521,16 @@ input[type="password"]:focus {
     transform: translateX(-50%) translateY(0);
 }
 
+/* Bottom Tooltip Variant for Top Bar */
+.tooltip-bottom[data-tooltip]::after {
+    top: calc(100% + 8px);
+    bottom: auto;
+}
+
+.tooltip-bottom[data-tooltip]:hover::after {
+    transform: translateX(-50%) translateY(0);
+}
+
 .settings-group {
     display: flex;
     flex-direction: column;
