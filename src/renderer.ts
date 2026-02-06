@@ -27,6 +27,10 @@ const accountNameLabel = document.getElementById('account-name') as HTMLElement;
 const currentContainerNameLabel = document.getElementById('current-container-name') as HTMLElement;
 const connectionStatus = document.getElementById('connection-status') as HTMLElement;
 const statusText = document.getElementById('status-text') as HTMLElement;
+const itemStatsCard = document.getElementById('item-stats-card') as HTMLElement;
+const itemCountLabel = document.getElementById('item-count') as HTMLElement;
+const blobListStats = document.getElementById('blob-list-stats') as HTMLElement;
+const containerCountCard = document.querySelector('.stat-card') as HTMLElement; // First card
 
 // Electron API (from preload)
 const api = (window as any).electronAPI;
@@ -180,6 +184,25 @@ function navigateUp() {
     updateBlobList();
 }
 
+async function performRecursiveCount(path: string, badgeElement: HTMLElement) {
+    if (!currentContainer) return;
+
+    badgeElement.textContent = '...';
+    badgeElement.classList.add('loading');
+
+    // Use the dedicated countBlobs API which does a flat (recursive) listing of blobs
+    const result = await api.countBlobs(currentContainer, path);
+
+    if (result.success) {
+        badgeElement.textContent = result.count.toString();
+        badgeElement.classList.remove('loading');
+        badgeElement.classList.add('counted');
+    } else {
+        badgeElement.textContent = '!';
+        badgeElement.classList.remove('loading');
+    }
+}
+
 async function updateBlobList(isLoadMore = false) {
     if (!currentContainer) return;
 
@@ -210,6 +233,14 @@ async function updateBlobList(isLoadMore = false) {
     if (loadingMore) loadingMore.remove();
 
     if (result.success) {
+        const folderCount = result.blobs.filter((b: any) => b.type === 'directory').length;
+        const fileCount = result.blobs.length - folderCount;
+        const totalCount = result.blobs.length;
+
+        itemStatsCard.style.display = 'block';
+        itemCountLabel.textContent = totalCount.toString() + (result.hasMore ? '+' : '');
+        blobListStats.textContent = `(${folderCount} folders, ${fileCount} files)`;
+
         if (!isLoadMore && result.blobs.length === 0) {
             blobList.innerHTML = '<li class="list-item empty">No blobs found in this container.</li>';
         } else {
@@ -224,7 +255,10 @@ async function updateBlobList(isLoadMore = false) {
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
                         <div style="display: flex; flex-direction: column;">
-                            <span>${blob.name}</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span>${blob.name}</span>
+                                ${blob.type === 'directory' ? `<span class="count-trigger" title="Count items">#</span>` : ''}
+                            </div>
                             <span class="text-secondary" style="font-size: 0.7rem">${blob.type || 'unknown'}</span>
                         </div>
                     </div>
@@ -233,7 +267,14 @@ async function updateBlobList(isLoadMore = false) {
                         <span class="text-secondary" style="font-size: 0.7rem">${blob.type === 'directory' ? '--' : formatDateTime(blob.lastModified)}</span>
                     </div>
                 `;
-                li.onclick = () => {
+                li.onclick = (e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.classList.contains('count-trigger')) {
+                        e.stopPropagation();
+                        performRecursiveCount(blob.name, target);
+                        return;
+                    }
+
                     if (blob.type === 'directory') {
                         blobSearchInput.value = blob.name;
                         updateBlobList();
@@ -340,6 +381,7 @@ disconnectBtn.addEventListener('click', async () => {
     settingsSection.style.display = 'none';
     containerView.style.display = 'block';
     blobView.style.display = 'none';
+    itemStatsCard.style.display = 'none';
 
     connectionStatus.classList.remove('connected');
     connectionStatus.classList.add('disconnected');
@@ -460,6 +502,7 @@ backToContainersBtn.addEventListener('click', () => {
         currentContainer = null;
         blobView.style.display = 'none';
         containerView.style.display = 'block';
+        itemStatsCard.style.display = 'none';
         updateContainerList();
     }
 });

@@ -6,5 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     disconnect: () => ipcRenderer.invoke('azure:disconnect'),
     listContainers: () => ipcRenderer.invoke('azure:listContainers'),
     listBlobs: (containerName: string, pageSize: number, continuationToken?: string, prefix?: string, delimiter?: string) =>
-        ipcRenderer.invoke('azure:listBlobs', containerName, pageSize, continuationToken, prefix, delimiter)
+        ipcRenderer.invoke('azure:listBlobs', containerName, pageSize, continuationToken, prefix, delimiter),
+    countBlobs: (containerName: string, prefix: string) =>
+        ipcRenderer.invoke('azure:countBlobs', containerName, prefix)
 });

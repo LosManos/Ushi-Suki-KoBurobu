@@ -122,6 +122,23 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:countBlobs', async (_event, containerName: string, prefix: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            let count = 0;
+            // Iterate through all blobs flatly to get total recursive count
+            // We use the iterator directly to avoid loading all properties at once
+            for await (const _blob of containerClient.listBlobsFlat({ prefix })) {
+                count++;
+            }
+            return { success: true, count };
+        } catch (error: any) {
+            console.error('Count Blobs Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();

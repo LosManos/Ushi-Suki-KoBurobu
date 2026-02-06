@@ -70,6 +70,10 @@
                         <label>Storage Account</label>
                         <div id="account-name" class="value">None</div>
                     </div>
+                    <div class="stat-card" id="item-stats-card" style="display: none;">
+                        <label id="item-stats-label">Items in Folder</label>
+                        <div id="item-count" class="value">0</div>
+                    </div>
                 </div>
 
                 <div id="container-view">
@@ -94,7 +98,9 @@
                     </div>
                     <div class="container-list-wrapper">
                         <div class="list-header">
-                            <h3>Blobs</h3>
+                            <h3 style="display: flex; align-items: center;">Blobs <span id="blob-list-stats"
+                                    class="text-secondary"
+                                    style="font-size: 0.8rem; font-weight: normal; margin-left: 8px;"></span></h3>
                             <div class="header-actions">
                                 <div class="search-group">
                                     <input type="text" id="blob-search-input" class="form-control"

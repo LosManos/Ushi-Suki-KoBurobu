@@ -573,3 +573,43 @@ input[type="password"]:focus {
     color: var(--bg-dark);
     border-color: var(--accent);
 }
+
+.count-trigger {
+    font-size: 0.65rem;
+    background: rgba(56, 189, 248, 0.15);
+    color: var(--accent);
+    padding: 2px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.count-trigger:hover {
+    background: var(--accent);
+    color: var(--bg-dark);
+    transform: scale(1.1);
+}
+
+.count-trigger.loading {
+    animation: pulse 1s infinite alternate;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.count-trigger.counted {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+@keyframes pulse {
+    from {
+        opacity: 0.4;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
