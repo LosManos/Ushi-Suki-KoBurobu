@@ -38,6 +38,8 @@ const modalTitle = modalOverlay.querySelector('.modal-header h3') as HTMLElement
 const modalContent = document.getElementById('modal-content') as HTMLElement;
 const closeModalBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
 const modalOkBtn = document.getElementById('modal-ok-btn') as HTMLButtonElement;
+const modalCancelBtn = document.getElementById('modal-cancel-btn') as HTMLButtonElement;
+const modalConfirmDeleteBtn = document.getElementById('modal-confirm-delete-btn') as HTMLButtonElement;
 
 // Electron API (from preload)
 const api = (window as any).electronAPI;
@@ -251,6 +253,12 @@ async function showBlobProperties(blobName: string) {
     modalTitle.textContent = 'Blob Properties';
     modal.classList.remove('large');
     modalContent.innerHTML = '<div class="text-secondary">Fetching properties...</div>';
+
+    // Reset buttons
+    modalOkBtn.style.display = 'inline-block';
+    modalCancelBtn.style.display = 'none';
+    modalConfirmDeleteBtn.style.display = 'none';
+
     modalOverlay.style.display = 'flex';
     modalContent.focus(); // Focus for scrolling
 
@@ -345,6 +353,49 @@ function isImage(name: string, contentType: string): boolean {
     return isImageContentType || (isOctetStream && isExtensionMatch);
 }
 
+async function deleteBlob(blobName: string) {
+    if (!currentContainer) return;
+
+    lastActiveElement = document.activeElement as HTMLElement;
+    modalTitle.textContent = 'Confirm Delete';
+    modal.classList.remove('large');
+    modalContent.innerHTML = `
+        <div style="padding: 10px 0;">
+            <p>Are you sure you want to delete this blob?</p>
+            <div style="margin-top: 15px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
+                <span style="font-family: monospace; word-break: break-all; color: #ef4444;">${blobName}</span>
+            </div>
+            <p style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary);">This action cannot be undone.</p>
+        </div>
+    `;
+
+    // Switch buttons
+    modalOkBtn.style.display = 'none';
+    modalCancelBtn.style.display = 'inline-block';
+    modalConfirmDeleteBtn.style.display = 'inline-block';
+    modalConfirmDeleteBtn.textContent = 'Delete';
+    modalConfirmDeleteBtn.disabled = false;
+
+    modalOverlay.style.display = 'flex';
+
+    modalConfirmDeleteBtn.onclick = async () => {
+        modalConfirmDeleteBtn.disabled = true;
+        modalConfirmDeleteBtn.textContent = 'Deleting...';
+        const result = await api.deleteBlob(currentContainer!, blobName);
+        if (result.success) {
+            closeModal();
+            updateBlobList();
+        } else {
+            alert('Delete failed: ' + result.error);
+            modalConfirmDeleteBtn.disabled = false;
+            modalConfirmDeleteBtn.textContent = 'Delete';
+        }
+    };
+
+    modalCancelBtn.onclick = () => closeModal();
+    modalConfirmDeleteBtn.focus();
+}
+
 async function showBlobImage(blobName: string, contentType: string) {
     if (!currentContainer) return;
 
@@ -357,6 +408,12 @@ async function showBlobImage(blobName: string, contentType: string) {
             <div class="loading-spinner"></div>
         </div>
     `;
+
+    // Reset buttons
+    modalOkBtn.style.display = 'inline-block';
+    modalCancelBtn.style.display = 'none';
+    modalConfirmDeleteBtn.style.display = 'none';
+
     modalOverlay.style.display = 'flex';
 
     const result = await api.getBlobData(currentContainer, blobName);
@@ -454,9 +511,9 @@ async function updateBlobList(isLoadMore = false) {
                 if (blob.type !== 'directory') {
                     li.setAttribute('data-content-type', blob.type);
                 }
-                li.setAttribute('data-tooltip', blob.type === 'directory' ? '↑↓ to navigate, Enter to select, Cmd+I to count folder' : '↑↓ to navigate, Enter to select, Space for preview, Cmd+I for properties');
+                li.setAttribute('data-tooltip', blob.type === 'directory' ? '↑↓ to navigate, Enter to select, Cmd+I to count folder' : '↑↓ to navigate, Enter to select, Space for preview, Cmd+I for properties, Del to delete');
                 li.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
                         <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
                         <div style="display: flex; flex-direction: column;">
                             <div style="display: flex; align-items: center; gap: 8px;">
@@ -466,9 +523,12 @@ async function updateBlobList(isLoadMore = false) {
                             <span class="text-secondary" style="font-size: 0.7rem">${blob.type || 'unknown'}</span>
                         </div>
                     </div>
-                    <div style="text-align: right;">
-                        <span class="text-secondary" style="font-size: 0.8rem; display: block;">${blob.type === 'directory' ? '--' : formatBytes(blob.size)}</span>
-                        <span class="text-secondary" style="font-size: 0.7rem">${blob.type === 'directory' ? '--' : formatDateTime(blob.lastModified)}</span>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="text-align: right;">
+                            <span class="text-secondary" style="font-size: 0.8rem; display: block;">${blob.type === 'directory' ? '--' : formatBytes(blob.size)}</span>
+                            <span class="text-secondary" style="font-size: 0.7rem">${blob.type === 'directory' ? '--' : formatDateTime(blob.lastModified)}</span>
+                        </div>
+                        ${blob.type !== 'directory' ? `<span class="delete-trigger" title="Delete (Del)">🗑️</span>` : ''}
                     </div>
                 `;
                 li.onclick = (e) => {
@@ -476,6 +536,12 @@ async function updateBlobList(isLoadMore = false) {
                     if (target.classList.contains('count-trigger')) {
                         e.stopPropagation();
                         performRecursiveCount(blob.name, target);
+                        return;
+                    }
+
+                    if (target.classList.contains('delete-trigger')) {
+                        e.stopPropagation();
+                        deleteBlob(blob.name);
                         return;
                     }
 
@@ -590,10 +656,19 @@ disconnectBtn.addEventListener('click', async () => {
 window.addEventListener('keydown', (e) => {
     // Modal Keyboard Navigation
     if (modalOverlay.style.display === 'flex') {
-        if (e.key === 'Escape' || e.key === 'Enter') {
+        if (e.key === 'Escape') {
             e.preventDefault();
             closeModal();
             return;
+        }
+        if (e.key === 'Enter') {
+            // Only close automatically if it's an informational modal (only OK btn is visible)
+            if (modalOkBtn.style.display !== 'none') {
+                e.preventDefault();
+                closeModal();
+                return;
+            }
+            // Otherwise, let the specific interaction (like confirm delete) handle Enter
         }
     }
 
@@ -630,9 +705,23 @@ window.addEventListener('keydown', (e) => {
 
     // List Item Interactions (Enter or Space)
     if ((e.key === 'Enter' || e.key === ' ') && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+        // Check if we are in a confirmation modal
+        if (modalOverlay.style.display === 'flex' && modalConfirmDeleteBtn.style.display !== 'none') {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // If focus is on a button, click it; otherwise click confirm
+                const activeBtn = document.activeElement as HTMLElement;
+                if (activeBtn && (activeBtn === modalConfirmDeleteBtn || activeBtn === modalCancelBtn)) {
+                    activeBtn.click();
+                } else {
+                    modalConfirmDeleteBtn.click();
+                }
+            }
+            return;
+        }
+
         const activeElement = document.activeElement as HTMLElement;
         if (activeElement && activeElement.classList.contains('list-item')) {
-            e.preventDefault();
             const blobName = activeElement.getAttribute('data-blob-name');
             const blobType = activeElement.getAttribute('data-blob-type');
             const contentType = activeElement.getAttribute('data-content-type') || 'application/octet-stream';
@@ -655,6 +744,20 @@ window.addEventListener('keydown', (e) => {
                 if (containerName) openContainer(containerName);
             }
             return;
+        }
+    }
+
+    // Delete Item (Delete or Alt+Backspace)
+    if ((e.key === 'Delete' || (e.altKey && e.key === 'Backspace')) && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+        const activeElement = document.activeElement as HTMLElement;
+        if (activeElement && activeElement.classList.contains('list-item')) {
+            const blobName = activeElement.getAttribute('data-blob-name');
+            const blobType = activeElement.getAttribute('data-blob-type');
+            if (blobView.style.display !== 'none' && blobName && blobType !== 'directory') {
+                e.preventDefault();
+                deleteBlob(blobName);
+                return;
+            }
         }
     }
 

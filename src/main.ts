@@ -179,6 +179,19 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:deleteBlob', async (_event, containerName: string, blobName: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const blobClient = containerClient.getBlobClient(blobName);
+            await blobClient.delete();
+            return { success: true };
+        } catch (error: any) {
+            console.error('Delete Blob Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();

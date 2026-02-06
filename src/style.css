@@ -614,6 +614,29 @@ input[type="password"]:focus {
     }
 }
 
+.delete-trigger {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    opacity: 0.3;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.list-item:hover .delete-trigger {
+    opacity: 0.7;
+}
+
+.delete-trigger:hover {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.1);
+    opacity: 1 !important;
+}
+
 /* Modal Styling */
 .modal-overlay {
     position: fixed;
