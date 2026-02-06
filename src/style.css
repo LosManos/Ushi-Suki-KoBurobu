@@ -356,6 +356,26 @@ input[type="password"]:focus {
 .breadcrumb h3 {
     font-family: 'Outfit', sans-serif;
     color: var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.breadcrumb-item {
+    cursor: pointer;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.breadcrumb-item:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+.breadcrumb-separator {
+    color: var(--text-secondary);
+    opacity: 0.5;
+    font-weight: 400;
 }
 
 .btn-link {

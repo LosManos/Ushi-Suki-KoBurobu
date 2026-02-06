@@ -101,14 +101,89 @@ async function updateContainerList() {
 
 async function openContainer(name: string) {
     currentContainer = name;
-    currentContainerNameLabel.textContent = name;
+    blobSearchInput.value = ''; // Reset search/prefix when opening new container
+    updateBreadcrumbs();
     containerView.style.display = 'none';
     blobView.style.display = 'block';
     updateBlobList();
 }
 
+function updateBreadcrumbs() {
+    if (!currentContainer) return;
+
+    currentContainerNameLabel.innerHTML = '';
+
+    // Root container
+    const rootSpan = document.createElement('span');
+    rootSpan.className = 'breadcrumb-item';
+    rootSpan.textContent = currentContainer;
+    rootSpan.onclick = () => {
+        blobSearchInput.value = '';
+        updateBlobList();
+    };
+    currentContainerNameLabel.appendChild(rootSpan);
+
+    const prefix = blobSearchInput.value;
+    const delimiter = blobDelimiterInput.value || '/';
+
+    if (prefix) {
+        const parts = prefix.split(delimiter).filter(p => p.length > 0);
+        let currentPath = '';
+
+        parts.forEach((part, index) => {
+            const separator = document.createElement('span');
+            separator.className = 'breadcrumb-separator';
+            separator.textContent = ` ${delimiter} `;
+            currentContainerNameLabel.appendChild(separator);
+
+            currentPath += part + delimiter;
+            const segmentSpan = document.createElement('span');
+            segmentSpan.className = 'breadcrumb-item';
+            segmentSpan.textContent = part;
+
+            // Only make it clickable if it's not the last one (or maybe always clickable to refresh)
+            const capturedPath = currentPath;
+            segmentSpan.onclick = () => {
+                blobSearchInput.value = capturedPath;
+                updateBlobList();
+            };
+
+            currentContainerNameLabel.appendChild(segmentSpan);
+        });
+    }
+}
+
+function navigateUp() {
+    const prefix = blobSearchInput.value;
+    const delimiter = blobDelimiterInput.value || '/';
+
+    if (!prefix || prefix === '') {
+        backToContainersBtn.click();
+        return;
+    }
+
+    // Remove trailing delimiter if it exists
+    let cleanPrefix = prefix;
+    if (prefix.endsWith(delimiter)) {
+        cleanPrefix = prefix.slice(0, -1);
+    }
+
+    const lastDelimiterIndex = cleanPrefix.lastIndexOf(delimiter);
+    if (lastDelimiterIndex === -1) {
+        // We are at the first level folder, go to root of container
+        blobSearchInput.value = '';
+    } else {
+        // Go to parent folder
+        blobSearchInput.value = cleanPrefix.slice(0, lastDelimiterIndex + 1);
+    }
+
+    updateBlobList();
+}
+
 async function updateBlobList(isLoadMore = false) {
     if (!currentContainer) return;
+
+    updateBreadcrumbs();
 
     if (!isLoadMore) {
         blobList.innerHTML = '<li class="list-item empty">Loading blobs...</li>';
@@ -329,14 +404,14 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // Backspace to go back to containers
+    // Backspace to go back/up
     if (e.key === 'Backspace') {
         if (blobView.style.display !== 'none') {
             const activeElement = document.activeElement;
             // Check if focus is NOT in an input/textarea to avoid breaking text editing
             if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
                 e.preventDefault();
-                backToContainersBtn.click();
+                navigateUp();
             }
         }
     }
@@ -378,10 +453,15 @@ window.addEventListener('keydown', (e) => {
 });
 
 backToContainersBtn.addEventListener('click', () => {
-    currentContainer = null;
-    blobView.style.display = 'none';
-    containerView.style.display = 'block';
-    updateContainerList();
+    const prefix = blobSearchInput.value;
+    if (prefix && prefix !== '') {
+        navigateUp();
+    } else {
+        currentContainer = null;
+        blobView.style.display = 'none';
+        containerView.style.display = 'block';
+        updateContainerList();
+    }
 });
 
 refreshContainersBtn.addEventListener('click', updateContainerList);

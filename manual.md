@@ -19,8 +19,8 @@ The following shortcuts are available to speed up your workflow:
 | `Cmd + D` / `Ctrl + D` | Disconnect from Storage Account |
 | `Shift + Enter` | Execute Query (in Query Editor mode) |
 | `↑` / `↓` | Navigate through container or blob lists |
-| `Enter` | Open selected container or select blob in lists |
-| `Backspace` | Go back to Container List (when in Blob View) |
+| `Enter` | Open selected container or folder |
+| `Backspace` | Go back one level or to Container List |
 | `R` | Refresh current list (Containers or Blobs) |
 | `P` | Focus Page Size dropdown (in Blob View) |
 | `Cmd + E` / `Ctrl + E` | Switch to Containers View |
@@ -31,4 +31,5 @@ The following shortcuts are available to speed up your workflow:
 
 - **Dashboard**: The main screen for connecting and seeing account stats.
 - **Containers**: List of all available containers in the account.
+- **Hierarchical Navigation**: Use breadcrumbs at the top of the blob list to quickly jump back to parent folders.
 - **Settings**: Manage application preferences, such as toggling between Local and UTC time display.
