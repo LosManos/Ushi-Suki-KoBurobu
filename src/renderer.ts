@@ -77,15 +77,26 @@ async function updateContainerList() {
                 const li = document.createElement('li');
                 li.className = 'list-item';
                 li.tabIndex = 0;
-                li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to open');
+                li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to open, Cmd+I to count');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>📁</span>
-                        <span>${container.name}</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span>${container.name}</span>
+                            <span class="count-trigger" title="Count items (Cmd+I)">#</span>
+                        </div>
                     </div>
                     <span class="text-secondary" style="font-size: 0.8rem">${formatDateTime(container.lastModified)}</span>
                 `;
-                li.onclick = () => openContainer(container.name);
+                li.onclick = (e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.classList.contains('count-trigger')) {
+                        e.stopPropagation();
+                        performRecursiveCount('', target, container.name);
+                        return;
+                    }
+                    openContainer(container.name);
+                };
                 li.onkeydown = (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
@@ -184,14 +195,15 @@ function navigateUp() {
     updateBlobList();
 }
 
-async function performRecursiveCount(path: string, badgeElement: HTMLElement) {
-    if (!currentContainer) return;
+async function performRecursiveCount(path: string, badgeElement: HTMLElement, containerOverride?: string) {
+    const container = containerOverride || currentContainer;
+    if (!container) return;
 
     badgeElement.textContent = '...';
     badgeElement.classList.add('loading');
 
     // Use the dedicated countBlobs API which does a flat (recursive) listing of blobs
-    const result = await api.countBlobs(currentContainer, path);
+    const result = await api.countBlobs(container, path);
 
     if (result.success) {
         badgeElement.textContent = result.count.toString();
@@ -200,6 +212,32 @@ async function performRecursiveCount(path: string, badgeElement: HTMLElement) {
     } else {
         badgeElement.textContent = '!';
         badgeElement.classList.remove('loading');
+    }
+}
+
+function countLoadedItems() {
+    if (blobView.style.display !== 'none') {
+        const loadedItems = blobList.querySelectorAll('.list-item:not(.empty):not(.load-more-item)').length;
+        const totalIndicator = itemCountLabel.textContent?.includes('+') ? '+' : '';
+        itemCountLabel.textContent = loadedItems.toString() + totalIndicator;
+
+        // Visual feedback
+        itemCountLabel.style.transition = 'none';
+        itemCountLabel.style.color = 'var(--accent)';
+        setTimeout(() => {
+            itemCountLabel.style.transition = 'color 0.5s ease';
+            itemCountLabel.style.color = '';
+        }, 50);
+    } else if (containerView.style.display !== 'none') {
+        const loadedContainers = containerList.querySelectorAll('.list-item:not(.empty)').length;
+        containerCountLabel.textContent = loadedContainers.toString();
+
+        containerCountLabel.style.transition = 'none';
+        containerCountLabel.style.color = 'var(--accent)';
+        setTimeout(() => {
+            containerCountLabel.style.transition = 'color 0.5s ease';
+            containerCountLabel.style.color = '';
+        }, 50);
     }
 }
 
@@ -250,14 +288,14 @@ async function updateBlobList(isLoadMore = false) {
                 const li = document.createElement('li');
                 li.className = 'list-item';
                 li.tabIndex = 0;
-                li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to select');
+                li.setAttribute('data-tooltip', '↑↓ to navigate, Enter to select, Cmd+I to count folder');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
                         <div style="display: flex; flex-direction: column;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span>${blob.name}</span>
-                                ${blob.type === 'directory' ? `<span class="count-trigger" title="Count items">#</span>` : ''}
+                                ${blob.type === 'directory' ? `<span class="count-trigger" title="Count items (Cmd+I)">#</span>` : ''}
                             </div>
                             <span class="text-secondary" style="font-size: 0.7rem">${blob.type || 'unknown'}</span>
                         </div>
@@ -490,6 +528,26 @@ window.addEventListener('keydown', (e) => {
             e.preventDefault();
             blobSearchInput.focus();
             blobSearchInput.select();
+        }
+    }
+
+    // Cmd/Ctrl + I for Blob Counter
+    if ((e.metaKey || e.ctrlKey) && e.code === 'KeyI') {
+        e.preventDefault();
+        const activeElement = document.activeElement as HTMLElement;
+
+        // Check if we are focused on a list item
+        if (activeElement && activeElement.classList.contains('list-item')) {
+            const countTrigger = activeElement.querySelector('.count-trigger') as HTMLElement;
+            if (countTrigger) {
+                countTrigger.click();
+            } else {
+                // If it's a file or item without count trigger, count all loaded items on client
+                countLoadedItems();
+            }
+        } else {
+            // Nothing specific focused, count all loaded items
+            countLoadedItems();
         }
     }
 });
