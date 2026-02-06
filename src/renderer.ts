@@ -1,6 +1,7 @@
 // DOM Elements
 const connectSection = document.getElementById('connect-section') as HTMLElement;
 const explorerSection = document.getElementById('explorer-section') as HTMLElement;
+const settingsSection = document.getElementById('settings-section') as HTMLElement;
 const containerView = document.getElementById('container-view') as HTMLElement;
 const blobView = document.getElementById('blob-view') as HTMLElement;
 
@@ -15,6 +16,10 @@ const blobSearchInput = document.getElementById('blob-search-input') as HTMLInpu
 const blobDelimiterInput = document.getElementById('blob-delimiter-input') as HTMLInputElement;
 const searchBlobsBtn = document.getElementById('search-blobs-btn') as HTMLButtonElement;
 
+const localTimeBtn = document.getElementById('local-time-btn') as HTMLButtonElement;
+const utcTimeBtn = document.getElementById('utc-time-btn') as HTMLButtonElement;
+const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
+
 const containerList = document.getElementById('container-list') as HTMLUListElement;
 const blobList = document.getElementById('blob-list') as HTMLUListElement;
 const containerCountLabel = document.getElementById('container-count') as HTMLElement;
@@ -28,6 +33,7 @@ const api = (window as any).electronAPI;
 
 let currentContainer: string | null = null;
 let currentContinuationToken: string | undefined = undefined;
+let useUTC = false;
 
 function formatBytes(bytes: number, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -36,6 +42,21 @@ function formatBytes(bytes: number, decimals = 2) {
     const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+function formatDateTime(dateStr: string | Date): string {
+    const date = new Date(dateStr);
+    const pad = (num: number) => num.toString().padStart(2, '0');
+
+    // ISO format: yyyy-mm-dd hh:MM:ss
+    const y = useUTC ? date.getUTCFullYear() : date.getFullYear();
+    const m = pad((useUTC ? date.getUTCMonth() : date.getMonth()) + 1);
+    const d = pad(useUTC ? date.getUTCDate() : date.getDate());
+    const h = pad(useUTC ? date.getUTCHours() : date.getHours());
+    const min = pad(useUTC ? date.getUTCMinutes() : date.getMinutes());
+    const s = pad(useUTC ? date.getUTCSeconds() : date.getSeconds());
+
+    return `${y}-${m}-${d} ${h}:${min}:${s}`;
 }
 
 async function updateContainerList() {
@@ -58,7 +79,7 @@ async function updateContainerList() {
                         <span>📁</span>
                         <span>${container.name}</span>
                     </div>
-                    <span class="text-secondary" style="font-size: 0.8rem">${new Date(container.lastModified).toLocaleDateString()}</span>
+                    <span class="text-secondary" style="font-size: 0.8rem">${formatDateTime(container.lastModified)}</span>
                 `;
                 li.onclick = () => openContainer(container.name);
                 li.onkeydown = (e) => {
@@ -134,7 +155,7 @@ async function updateBlobList(isLoadMore = false) {
                     </div>
                     <div style="text-align: right;">
                         <span class="text-secondary" style="font-size: 0.8rem; display: block;">${blob.type === 'directory' ? '--' : formatBytes(blob.size)}</span>
-                        <span class="text-secondary" style="font-size: 0.7rem">${blob.type === 'directory' ? '--' : new Date(blob.lastModified).toLocaleDateString()}</span>
+                        <span class="text-secondary" style="font-size: 0.7rem">${blob.type === 'directory' ? '--' : formatDateTime(blob.lastModified)}</span>
                     </div>
                 `;
                 li.onclick = () => {
@@ -211,6 +232,7 @@ connectBtn.addEventListener('click', async () => {
     if (result.success) {
         connectSection.style.display = 'none';
         explorerSection.style.display = 'block';
+        settingsSection.style.display = 'none';
         accountNameLabel.textContent = result.accountName;
 
         connectionStatus.classList.remove('disconnected');
@@ -240,6 +262,7 @@ disconnectBtn.addEventListener('click', async () => {
 
     connectSection.style.display = 'block';
     explorerSection.style.display = 'none';
+    settingsSection.style.display = 'none';
     containerView.style.display = 'block';
     blobView.style.display = 'none';
 
@@ -257,10 +280,24 @@ disconnectBtn.addEventListener('click', async () => {
 window.addEventListener('keydown', (e) => {
     // Cmd/Ctrl + D for Disconnect
     if ((e.metaKey || e.ctrlKey) && e.code === 'KeyD') {
-        if (explorerSection.style.display !== 'none') {
+        if (explorerSection.style.display !== 'none' || settingsSection.style.display !== 'none') {
             e.preventDefault();
             disconnectBtn.click();
         }
+    }
+
+    // Cmd/Ctrl + , for Settings
+    if ((e.metaKey || e.ctrlKey) && (e.key === ',' || e.code === 'Comma')) {
+        e.preventDefault();
+        const settingsTab = Array.from(document.querySelectorAll('.nav-item')).find(item => item.textContent?.trim() === 'Settings') as HTMLElement;
+        if (settingsTab) settingsTab.click();
+    }
+
+    // Cmd/Ctrl + E for Containers
+    if ((e.metaKey || e.ctrlKey) && e.code === 'KeyE') {
+        e.preventDefault();
+        const containersTab = Array.from(document.querySelectorAll('.nav-item')).find(item => item.textContent?.trim() === 'Containers') as HTMLElement;
+        if (containersTab) containersTab.click();
     }
 
     // Cmd/Ctrl + Enter for Connect
@@ -370,15 +407,71 @@ pageSizeSelect.addEventListener('change', () => {
     }
 });
 
+// Settings Toggle Logic
+function updateTimeSetting(value: boolean) {
+    useUTC = value;
+    headerTimeToggle.checked = useUTC;
+    if (useUTC) {
+        utcTimeBtn.classList.add('active');
+        localTimeBtn.classList.remove('active');
+    } else {
+        localTimeBtn.classList.add('active');
+        utcTimeBtn.classList.remove('active');
+    }
+    refreshAllViews();
+}
+
+localTimeBtn.addEventListener('click', () => updateTimeSetting(false));
+utcTimeBtn.addEventListener('click', () => updateTimeSetting(true));
+headerTimeToggle.addEventListener('change', () => updateTimeSetting(headerTimeToggle.checked));
+
+function refreshAllViews() {
+    if (explorerSection.style.display !== 'none') {
+        if (blobView.style.display !== 'none') {
+            updateBlobList();
+        } else {
+            updateContainerList();
+        }
+    }
+}
+
 // Tab switching (sidebar)
 document.querySelectorAll('.nav-item').forEach(item => {
     item.addEventListener('click', () => {
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         item.classList.add('active');
 
-        // Focus connection string if Dashboard is clicked and connect section is visible
-        if (item.textContent === 'Dashboard' && connectSection.style.display !== 'none') {
-            connectionStringInput.focus();
+        const tabName = item.textContent?.trim();
+
+        // UI helper to show/hide sections
+        const showSection = (id: string) => {
+            connectSection.style.display = id === 'connect' ? 'block' : 'none';
+            explorerSection.style.display = id === 'explorer' ? 'block' : 'none';
+            settingsSection.style.display = id === 'settings' ? 'block' : 'none';
+        };
+
+        if (tabName === 'Dashboard') {
+            if (statusText.textContent === 'Connected') {
+                showSection('explorer');
+                if (currentContainer) {
+                    containerView.style.display = 'none';
+                    blobView.style.display = 'block';
+                } else {
+                    containerView.style.display = 'block';
+                    blobView.style.display = 'none';
+                }
+            } else {
+                showSection('connect');
+                connectionStringInput.focus();
+            }
+        } else if (tabName === 'Containers') {
+            showSection('explorer');
+            containerView.style.display = 'block';
+            blobView.style.display = 'none';
+            currentContainer = null;
+            updateContainerList();
+        } else if (tabName === 'Settings') {
+            showSection('settings');
         }
     });
 });

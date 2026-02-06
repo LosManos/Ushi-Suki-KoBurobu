@@ -23,10 +23,12 @@ The following shortcuts are available to speed up your workflow:
 | `Backspace` | Go back to Container List (when in Blob View) |
 | `R` | Refresh current list (Containers or Blobs) |
 | `P` | Focus Page Size dropdown (in Blob View) |
+| `Cmd + E` / `Ctrl + E` | Switch to Containers View |
+| `Cmd + ,` / `Ctrl + ,` | Switch to Settings View |
 | `Cmd + F` / `Ctrl + F` | Search/Filter Blobs (in Blob View) |
 
 ## Navigation
 
 - **Dashboard**: The main screen for connecting and seeing account stats.
 - **Containers**: List of all available containers in the account.
-- **Settings**: Application configuration (Coming soon).
+- **Settings**: Manage application preferences, such as toggling between Local and UTC time display.
