@@ -33,6 +33,8 @@ const blobListStats = document.getElementById('blob-list-stats') as HTMLElement;
 const containerCountCard = document.querySelector('.stat-card') as HTMLElement; // First card
 
 const modalOverlay = document.getElementById('modal-overlay') as HTMLElement;
+const modal = modalOverlay.querySelector('.modal') as HTMLElement;
+const modalTitle = modalOverlay.querySelector('.modal-header h3') as HTMLElement;
 const modalContent = document.getElementById('modal-content') as HTMLElement;
 const closeModalBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
 const modalOkBtn = document.getElementById('modal-ok-btn') as HTMLButtonElement;
@@ -43,6 +45,7 @@ const api = (window as any).electronAPI;
 let currentContainer: string | null = null;
 let currentContinuationToken: string | undefined = undefined;
 let useUTC = false;
+let lastActiveElement: HTMLElement | null = null;
 
 function formatBytes(bytes: number, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -244,6 +247,9 @@ function countLoadedItems() {
 async function showBlobProperties(blobName: string) {
     if (!currentContainer) return;
 
+    lastActiveElement = document.activeElement as HTMLElement;
+    modalTitle.textContent = 'Blob Properties';
+    modal.classList.remove('large');
     modalContent.innerHTML = '<div class="text-secondary">Fetching properties...</div>';
     modalOverlay.style.display = 'flex';
     modalContent.focus(); // Focus for scrolling
@@ -328,12 +334,71 @@ async function showBlobProperties(blobName: string) {
     }
 }
 
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
+
+function isImage(name: string, contentType: string): boolean {
+    const lowerName = name.toLowerCase();
+    const isExtensionMatch = IMAGE_EXTENSIONS.some(ext => lowerName.endsWith(ext));
+    const isImageContentType = contentType && contentType.startsWith('image/');
+    const isOctetStream = contentType === 'application/octet-stream';
+
+    return isImageContentType || (isOctetStream && isExtensionMatch);
+}
+
+async function showBlobImage(blobName: string, contentType: string) {
+    if (!currentContainer) return;
+
+    lastActiveElement = document.activeElement as HTMLElement;
+    modalTitle.textContent = 'Blob Preview';
+    modal.classList.add('large');
+    modalContent.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; padding: 20px;">
+            <div class="text-secondary">Loading image...</div>
+            <div class="loading-spinner"></div>
+        </div>
+    `;
+    modalOverlay.style.display = 'flex';
+
+    const result = await api.getBlobData(currentContainer, blobName);
+
+    if (result.success) {
+        // Use proper content type for the blob URL if it was octet-stream
+        let blobType = contentType;
+        if (contentType === 'application/octet-stream' || !contentType || contentType === 'blob') {
+            const lowerName = blobName.toLowerCase();
+            if (lowerName.endsWith('.svg')) blobType = 'image/svg+xml';
+            else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) blobType = 'image/jpeg';
+            else if (lowerName.endsWith('.png')) blobType = 'image/png';
+            else if (lowerName.endsWith('.gif')) blobType = 'image/gif';
+            else if (lowerName.endsWith('.webp')) blobType = 'image/webp';
+            else if (lowerName.endsWith('.bmp')) blobType = 'image/bmp';
+        }
+
+        const blob = new Blob([result.data], { type: blobType });
+        const url = URL.createObjectURL(blob);
+
+        modalContent.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 15px;">
+                <div style="max-height: 70vh; max-width: 100%; overflow: auto; border: 1px solid var(--border-color); border-radius: 4px; background: #000;">
+                    <img src="${url}" style="max-width: 100%; display: block;" onload="URL.revokeObjectURL('${url}')" />
+                </div>
+                <div class="text-secondary" style="font-size: 0.9rem;">${blobName}</div>
+                <div class="text-secondary" style="font-size: 0.8rem;">${contentType} (${formatBytes(result.data.length)})</div>
+            </div>
+        `;
+        modalContent.focus();
+    } else {
+        modalContent.innerHTML = `<div class="text-danger">Error loading image: ${result.error}</div>`;
+        modalContent.focus();
+    }
+}
+
 function closeModal() {
     modalOverlay.style.display = 'none';
-    // Return focus to the list item if possible
-    const lastFocused = document.querySelector('.list-item:focus') as HTMLElement;
-    if (lastFocused) {
-        lastFocused.focus();
+    // Return focus to the original item that triggered the modal
+    if (lastActiveElement) {
+        lastActiveElement.focus();
+        lastActiveElement = null;
     }
 }
 
@@ -386,7 +451,10 @@ async function updateBlobList(isLoadMore = false) {
                 li.tabIndex = 0;
                 li.setAttribute('data-blob-name', blob.name);
                 li.setAttribute('data-blob-type', blob.type === 'directory' ? 'directory' : 'file');
-                li.setAttribute('data-tooltip', blob.type === 'directory' ? '↑↓ to navigate, Enter to select, Cmd+I to count folder' : '↑↓ to navigate, Enter to select, Cmd+I for properties');
+                if (blob.type !== 'directory') {
+                    li.setAttribute('data-content-type', blob.type);
+                }
+                li.setAttribute('data-tooltip', blob.type === 'directory' ? '↑↓ to navigate, Enter to select, Cmd+I to count folder' : '↑↓ to navigate, Enter to select, Space for preview, Cmd+I for properties');
                 li.innerHTML = `
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
@@ -560,22 +628,29 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // List Item Interactions (Enter)
-    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+    // List Item Interactions (Enter or Space)
+    if ((e.key === 'Enter' || e.key === ' ') && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
         const activeElement = document.activeElement as HTMLElement;
         if (activeElement && activeElement.classList.contains('list-item')) {
             e.preventDefault();
             const blobName = activeElement.getAttribute('data-blob-name');
             const blobType = activeElement.getAttribute('data-blob-type');
+            const contentType = activeElement.getAttribute('data-content-type') || 'application/octet-stream';
 
             if (blobView.style.display !== 'none' && blobName) {
                 if (blobType === 'directory') {
-                    blobSearchInput.value = blobName;
-                    updateBlobList();
+                    if (e.key === 'Enter') {
+                        blobSearchInput.value = blobName;
+                        updateBlobList();
+                    }
                 } else {
-                    showBlobProperties(blobName);
+                    if (e.key === ' ' && isImage(blobName, contentType)) {
+                        showBlobImage(blobName, contentType);
+                    } else if (e.key === 'Enter') {
+                        showBlobProperties(blobName);
+                    }
                 }
-            } else if (containerView.style.display !== 'none') {
+            } else if (containerView.style.display !== 'none' && e.key === 'Enter') {
                 const containerName = activeElement.getAttribute('data-container-name');
                 if (containerName) openContainer(containerName);
             }

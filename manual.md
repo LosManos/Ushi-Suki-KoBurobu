@@ -19,7 +19,8 @@ The following shortcuts are available to speed up your workflow:
 | `Cmd + D` / `Ctrl + D` | Disconnect from Storage Account |
 | `Shift + Enter` | Execute Query (in Query Editor mode) |
 | `↑` / `↓` | Navigate through container or blob lists |
-| `Enter` | Open selected container or folder |
+| `Enter` | Open selected container/folder or show file properties |
+| `Space` | Preview image (for blobs with image extensions) |
 | `Backspace` | Go back one level or to Container List |
 | `R` | Refresh current list (Containers or Blobs) |
 | `P` | Focus Page Size dropdown (in Blob View) |

@@ -122,6 +122,19 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:getBlobData', async (_event, containerName: string, blobName: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+            const buffer = await blockBlobClient.downloadToBuffer();
+            return { success: true, data: buffer };
+        } catch (error: any) {
+            console.error('Get Blob Data Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
     ipcMain.handle('azure:getBlobProperties', async (_event, containerName: string, blobName: string) => {
         if (!blobServiceClient) return { success: false, error: 'Not connected' };
         try {

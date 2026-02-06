@@ -760,3 +760,24 @@ input[type="password"]:focus {
     font-weight: 600;
     width: 40%;
 }
+
+/* Loading Spinner */
+.loading-spinner {
+    width: 30px;
+    height: 30px;
+    border: 3px solid var(--glass-border);
+    border-radius: 50%;
+    border-top-color: var(--accent);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.modal.large {
+    max-width: 90%;
+    width: 800px;
+}
