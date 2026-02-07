@@ -48,6 +48,34 @@ let currentContainer: string | null = null;
 let currentContinuationToken: string | undefined = undefined;
 let useUTC = false;
 let lastActiveElement: HTMLElement | null = null;
+let selectedBlobs: Set<string> = new Set();
+
+function toggleBlobSelection(blobName: string, element: HTMLElement) {
+    if (selectedBlobs.has(blobName)) {
+        selectedBlobs.delete(blobName);
+        element.classList.remove('selected');
+    } else {
+        selectedBlobs.add(blobName);
+        element.classList.add('selected');
+    }
+}
+
+function selectAllBlobs() {
+    const items = blobList.querySelectorAll('.list-item:not(.empty):not(.load-more-item)');
+    items.forEach(item => {
+        const blobName = item.getAttribute('data-blob-name');
+        if (blobName) {
+            selectedBlobs.add(blobName);
+            item.classList.add('selected');
+        }
+    });
+}
+
+function clearSelection() {
+    selectedBlobs.clear();
+    const items = blobList.querySelectorAll('.list-item.selected');
+    items.forEach(item => item.classList.remove('selected'));
+}
 
 function formatBytes(bytes: number, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
@@ -122,6 +150,7 @@ async function updateContainerList() {
 async function openContainer(name: string) {
     currentContainer = name;
     blobSearchInput.value = ''; // Reset search/prefix when opening new container
+    clearSelection();
     updateBreadcrumbs();
     containerView.style.display = 'none';
     blobView.style.display = 'block';
@@ -197,6 +226,7 @@ function navigateUp() {
         blobSearchInput.value = cleanPrefix.slice(0, lastDelimiterIndex + 1);
     }
 
+    clearSelection();
     updateBlobList();
 }
 
@@ -353,17 +383,22 @@ function isImage(name: string, contentType: string): boolean {
     return isImageContentType || (isOctetStream && isExtensionMatch);
 }
 
-async function deleteBlob(blobName: string) {
-    if (!currentContainer) return;
+async function deleteBlobsUI(blobNames: string[]) {
+    if (!currentContainer || blobNames.length === 0) return;
 
     lastActiveElement = document.activeElement as HTMLElement;
-    modalTitle.textContent = 'Confirm Delete';
+    modalTitle.textContent = blobNames.length > 1 ? `Confirm Delete (${blobNames.length} items)` : 'Confirm Delete';
     modal.classList.remove('large');
+
+    const namesList = blobNames.length > 5
+        ? `${blobNames.slice(0, 5).join('<br>')}<br>...and ${blobNames.length - 5} more`
+        : blobNames.join('<br>');
+
     modalContent.innerHTML = `
         <div style="padding: 10px 0;">
-            <p>Are you sure you want to delete this blob?</p>
-            <div style="margin-top: 15px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
-                <span style="font-family: monospace; word-break: break-all; color: #ef4444;">${blobName}</span>
+            <p>Are you sure you want to delete ${blobNames.length > 1 ? 'these blobs' : 'this blob'}?</p>
+            <div style="margin-top: 15px; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px; max-height: 200px; overflow-y: auto;">
+                <span style="font-family: monospace; word-break: break-all; color: #ef4444; font-size: 0.85rem;">${namesList}</span>
             </div>
             <p style="margin-top: 15px; font-size: 0.85rem; color: var(--text-secondary);">This action cannot be undone.</p>
         </div>
@@ -381,9 +416,17 @@ async function deleteBlob(blobName: string) {
     modalConfirmDeleteBtn.onclick = async () => {
         modalConfirmDeleteBtn.disabled = true;
         modalConfirmDeleteBtn.textContent = 'Deleting...';
-        const result = await api.deleteBlob(currentContainer!, blobName);
+
+        let result;
+        if (blobNames.length === 1) {
+            result = await api.deleteBlob(currentContainer!, blobNames[0]);
+        } else {
+            result = await api.deleteBlobs(currentContainer!, blobNames);
+        }
+
         if (result.success) {
             closeModal();
+            clearSelection();
             updateBlobList();
         } else {
             alert('Delete failed: ' + result.error);
@@ -467,6 +510,7 @@ async function updateBlobList(isLoadMore = false) {
     if (!isLoadMore) {
         blobList.innerHTML = '<li class="list-item empty">Loading blobs...</li>';
         currentContinuationToken = undefined;
+        clearSelection();
     } else {
         // Remove the "Load More" item if it exists
         const moreItem = blobList.querySelector('.load-more-item');
@@ -505,32 +549,36 @@ async function updateBlobList(isLoadMore = false) {
             result.blobs.forEach((blob: any) => {
                 const li = document.createElement('li');
                 li.className = 'list-item';
+                if (selectedBlobs.has(blob.name)) li.classList.add('selected');
                 li.tabIndex = 0;
                 li.setAttribute('data-blob-name', blob.name);
                 li.setAttribute('data-blob-type', blob.type === 'directory' ? 'directory' : 'file');
+                const contentType = blob.type === 'directory' ? 'directory' : (blob.type || 'application/octet-stream');
                 if (blob.type !== 'directory') {
-                    li.setAttribute('data-content-type', blob.type);
+                    li.setAttribute('data-content-type', contentType);
                 }
-                li.setAttribute('data-tooltip', blob.type === 'directory' ? '↑↓ to navigate, Enter to select, Cmd+I to count folder' : '↑↓ to navigate, Enter to select, Space for preview, Cmd+I for properties, Del to delete');
+
+                li.setAttribute('data-tooltip', blob.type === 'directory' ? '↑↓ to navigate, Enter to select, Cmd+I to count folder' : '↑↓ to navigate, Clicking marks, Double-click/Alt+Enter for meta data, Enter for image');
                 li.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1; pointer-events: none;">
                         <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
                         <div style="display: flex; flex-direction: column;">
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 <span>${blob.name}</span>
-                                ${blob.type === 'directory' ? `<span class="count-trigger" title="Count items (Cmd+I)">#</span>` : ''}
+                                ${blob.type === 'directory' ? `<span class="count-trigger" style="pointer-events: auto;" title="Count items (Cmd+I)">#</span>` : ''}
                             </div>
                             <span class="text-secondary" style="font-size: 0.7rem">${blob.type || 'unknown'}</span>
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 15px;">
-                        <div style="text-align: right;">
+                        <div style="text-align: right; pointer-events: none;">
                             <span class="text-secondary" style="font-size: 0.8rem; display: block;">${blob.type === 'directory' ? '--' : formatBytes(blob.size)}</span>
                             <span class="text-secondary" style="font-size: 0.7rem">${blob.type === 'directory' ? '--' : formatDateTime(blob.lastModified)}</span>
                         </div>
                         ${blob.type !== 'directory' ? `<span class="delete-trigger" title="Delete (Del)">🗑️</span>` : ''}
                     </div>
                 `;
+
                 li.onclick = (e) => {
                     const target = e.target as HTMLElement;
                     if (target.classList.contains('count-trigger')) {
@@ -541,7 +589,7 @@ async function updateBlobList(isLoadMore = false) {
 
                     if (target.classList.contains('delete-trigger')) {
                         e.stopPropagation();
-                        deleteBlob(blob.name);
+                        deleteBlobsUI([blob.name]);
                         return;
                     }
 
@@ -549,9 +597,27 @@ async function updateBlobList(isLoadMore = false) {
                         blobSearchInput.value = blob.name;
                         updateBlobList();
                     } else {
+                        // Mark it
+                        toggleBlobSelection(blob.name, li);
+                    }
+                };
+
+                li.ondblclick = (e) => {
+                    if (blob.type !== 'directory') {
+                        e.stopPropagation();
                         showBlobProperties(blob.name);
                     }
                 };
+
+                li.oncontextmenu = (e) => {
+                    if (blob.type !== 'directory') {
+                        e.preventDefault();
+                        if (isImage(blob.name, contentType)) {
+                            showBlobImage(blob.name, contentType);
+                        }
+                    }
+                };
+
                 blobList.appendChild(li);
             });
 
@@ -703,13 +769,24 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // List Item Interactions (Enter or Space)
-    if ((e.key === 'Enter' || e.key === ' ') && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+    // Cmd/Ctrl + A for Select All
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'a' || e.key === 'A')) {
+        if (blobView.style.display !== 'none') {
+            const activeElement = document.activeElement;
+            if (activeElement?.tagName !== 'INPUT' && activeElement?.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+                selectAllBlobs();
+                return;
+            }
+        }
+    }
+
+    // List Item Interactions
+    if ((e.key === 'Enter' || e.key === ' ') && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey) {
         // Check if we are in a confirmation modal
         if (modalOverlay.style.display === 'flex' && modalConfirmDeleteBtn.style.display !== 'none') {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                // If focus is on a button, click it; otherwise click confirm
                 const activeBtn = document.activeElement as HTMLElement;
                 if (activeBtn && (activeBtn === modalConfirmDeleteBtn || activeBtn === modalCancelBtn)) {
                     activeBtn.click();
@@ -733,10 +810,26 @@ window.addEventListener('keydown', (e) => {
                         updateBlobList();
                     }
                 } else {
-                    if (e.key === ' ' && isImage(blobName, contentType)) {
-                        showBlobImage(blobName, contentType);
+                    if (e.key === ' ') {
+                        e.preventDefault();
+                        toggleBlobSelection(blobName, activeElement);
                     } else if (e.key === 'Enter') {
-                        showBlobProperties(blobName);
+                        e.preventDefault();
+                        if (isImage(blobName, contentType)) {
+                            showBlobImage(blobName, contentType);
+                        } else {
+                            // Signal user
+                            activeElement.classList.add('shake');
+                            setTimeout(() => activeElement.classList.remove('shake'), 400);
+                            statusText.textContent = 'Not an image';
+                            statusText.classList.add('status-message-highlight');
+                            setTimeout(() => {
+                                if (statusText.textContent === 'Not an image') {
+                                    statusText.textContent = 'Connected';
+                                    statusText.classList.remove('status-message-highlight');
+                                }
+                            }, 2000);
+                        }
                     }
                 }
             } else if (containerView.style.display !== 'none' && e.key === 'Enter') {
@@ -747,16 +840,37 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // Delete Item (Delete or Alt+Backspace)
-    if ((e.key === 'Delete' || (e.altKey && e.key === 'Backspace')) && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+    // Alt + Enter for Meta Data (Properties)
+    if (e.key === 'Enter' && e.altKey) {
         const activeElement = document.activeElement as HTMLElement;
         if (activeElement && activeElement.classList.contains('list-item')) {
             const blobName = activeElement.getAttribute('data-blob-name');
-            const blobType = activeElement.getAttribute('data-blob-type');
-            if (blobView.style.display !== 'none' && blobName && blobType !== 'directory') {
+            if (blobName && activeElement.getAttribute('data-blob-type') !== 'directory') {
                 e.preventDefault();
-                deleteBlob(blobName);
+                showBlobProperties(blobName);
                 return;
+            }
+        }
+    }
+
+    // Delete Item (Delete or Alt+Backspace)
+    if ((e.key === 'Delete' || (e.altKey && e.key === 'Backspace')) && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+        if (blobView.style.display !== 'none') {
+            if (selectedBlobs.size > 0) {
+                e.preventDefault();
+                deleteBlobsUI(Array.from(selectedBlobs));
+                return;
+            } else {
+                const activeElement = document.activeElement as HTMLElement;
+                if (activeElement && activeElement.classList.contains('list-item')) {
+                    const blobName = activeElement.getAttribute('data-blob-name');
+                    const blobType = activeElement.getAttribute('data-blob-type');
+                    if (blobName && blobType !== 'directory') {
+                        e.preventDefault();
+                        deleteBlobsUI([blobName]);
+                        return;
+                    }
+                }
             }
         }
     }

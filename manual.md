@@ -17,10 +17,14 @@ The following shortcuts are available to speed up your workflow:
 | --- | --- |
 | `Enter` | Connect Account (when focused on Connection String) |
 | `Cmd + D` / `Ctrl + D` | Disconnect from Storage Account |
-| `Shift + Enter` | Execute Query (in Query Editor mode) |
+| `Cmd + A` / `Ctrl + A` | Select all blobs in current view |
+| `Space` | Toggle mark/selection of focused blob |
+| `Click` | Mark/selection of blob |
+| `Double-click` / `Alt + Enter` | Show blob properties (meta data) |
+| `Enter` | Open blob as image preview |
+| `Right-click` | Open blob as image preview |
+| `Del` / `Alt + Backspace` | Delete all marked/selected blobs (requires confirmation) |
 | `↑` / `↓` | Navigate through container or blob lists |
-| `Enter` | Open selected container/folder or show file properties |
-| `Space` | Preview image (for blobs with image extensions) |
 | `Backspace` | Go back one level or to Container List |
 | `R` | Refresh current list (Containers or Blobs) |
 | `P` | Focus Page Size dropdown (in Blob View) |
@@ -28,8 +32,6 @@ The following shortcuts are available to speed up your workflow:
 | `Cmd + ,` / `Ctrl + ,` | Switch to Settings View |
 | `Cmd + F` / `Ctrl + F` | Search/Filter Blobs (in Blob View) |
 | `Cmd + I` / `Ctrl + I` | Blob Counter: Count all in folder (server) or loaded items (client) |
-| `Del` | Delete selected blob (requires confirmation) |
-| `Alt + Backspace` | Delete selected blob (requires confirmation) |
 | `Esc` / `Enter` | Close informational dialogues (like Blob Properties) |
 
 ## Navigation

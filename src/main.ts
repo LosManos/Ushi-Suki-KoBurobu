@@ -192,6 +192,34 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:deleteBlobs', async (_event, containerName: string, blobNames: string[]) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const results = {
+                successCount: 0,
+                errorCount: 0,
+                errors: [] as { name: string, error: string }[]
+            };
+
+            for (const name of blobNames) {
+                try {
+                    const blobClient = containerClient.getBlobClient(name);
+                    await blobClient.delete();
+                    results.successCount++;
+                } catch (error: any) {
+                    results.errorCount++;
+                    results.errors.push({ name, error: error.message });
+                }
+            }
+
+            return { success: true, results };
+        } catch (error: any) {
+            console.error('Delete Blobs Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();

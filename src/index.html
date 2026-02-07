@@ -38,8 +38,9 @@
                         </label>
                         <span class="time-mode-label">UTC</span>
                     </div>
-                    <span id="connection-status" class="status-dot disconnected"></span>
-                    <span id="status-text">Disconnected</span>
+                    <div id="header-status-area" style="display: flex; align-items: center; gap: 8px;">
+                        <!-- Status moved to footer -->
+                    </div>
                     <button id="disconnect-btn" class="btn btn-secondary btn-sm tooltip-bottom" style="display: none;"
                         data-tooltip="Disconnect (Cmd+D)" title="Disconnect (Cmd+D)">Disconnect</button>
                 </div>
@@ -166,6 +167,16 @@
             </div>
         </div>
     </div>
+    <footer class="app-footer">
+        <div class="footer-left">
+            <span id="connection-status" class="status-dot disconnected"></span>
+            <span id="status-text">Disconnected</span>
+        </div>
+        <div class="footer-right">
+            <span id="footer-version">v0.5.2</span>
+            <span id="footer-time-display"></span>
+        </div>
+    </footer>
     <script src="renderer.js"></script>
 </body>
 
