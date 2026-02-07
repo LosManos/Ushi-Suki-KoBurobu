@@ -44,7 +44,6 @@ const modalOverlay = document.getElementById('modal-overlay') as HTMLElement;
 const modal = modalOverlay.querySelector('.modal') as HTMLElement;
 const modalTitle = modalOverlay.querySelector('.modal-header h3') as HTMLElement;
 const modalContent = document.getElementById('modal-content') as HTMLElement;
-const closeModalBtn = document.getElementById('close-modal-btn') as HTMLButtonElement;
 const modalOkBtn = document.getElementById('modal-ok-btn') as HTMLButtonElement;
 const modalCancelBtn = document.getElementById('modal-cancel-btn') as HTMLButtonElement;
 const modalConfirmDeleteBtn = document.getElementById('modal-confirm-delete-btn') as HTMLButtonElement;
@@ -59,6 +58,10 @@ let lastActiveElement: HTMLElement | null = null;
 let selectedBlobs: Set<string> = new Set();
 let tabs: any[] = [];
 let activeTabId: string = 'containers-home';
+
+function isModalOpen(): boolean {
+    return modalOverlay.style.display === 'flex';
+}
 
 function toggleBlobSelection(blobName: string, element: HTMLElement) {
     if (selectedBlobs.has(blobName)) {
@@ -141,6 +144,7 @@ async function updateContainerList() {
                     openContainer(container.name);
                 };
                 treeLi.onkeydown = (e) => {
+                    if (isModalOpen()) return;
                     const items = Array.from(sidebarTreeview.querySelectorAll('.tree-item')) as HTMLElement[];
                     const index = items.indexOf(treeLi);
 
@@ -512,6 +516,7 @@ async function deleteBlobsUI(blobNames: string[]) {
     modalConfirmDeleteBtn.disabled = false;
 
     modalOverlay.style.display = 'flex';
+    modalConfirmDeleteBtn.focus();
 
     modalConfirmDeleteBtn.onclick = async () => {
         modalConfirmDeleteBtn.disabled = true;
@@ -542,6 +547,7 @@ async function showBlobImage(blobName: string, contentType: string) {
     modalConfirmDeleteBtn.style.display = 'none';
 
     modalOverlay.style.display = 'flex';
+    modalOkBtn.focus();
 
     const result = await api.getBlobData(currentContainer, blobName);
 
@@ -631,6 +637,7 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                 }
             };
             li.onkeydown = (e) => {
+                if (isModalOpen()) return;
                 const items = Array.from(blobList.querySelectorAll('.list-item:not(.empty)')) as HTMLElement[];
                 const index = items.indexOf(li);
 
@@ -704,6 +711,7 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
             loadMoreLi.innerHTML = `<span class="text-accent" style="width: 100%; text-align: center;">More items available (Enter/Click to load)</span>`;
             loadMoreLi.onclick = () => updateBlobList(true);
             loadMoreLi.onkeydown = (e) => {
+                if (isModalOpen()) return;
                 const items = Array.from(blobList.querySelectorAll('.list-item:not(.empty)')) as HTMLElement[];
                 const index = items.indexOf(loadMoreLi);
 
@@ -821,6 +829,7 @@ async function openSettings() {
     `;
 
     modalOverlay.style.display = 'flex';
+    modalOkBtn.focus();
 
     const modalLocalBtn = document.getElementById('modal-local-time-btn') as HTMLButtonElement;
     const modalUtcBtn = document.getElementById('modal-utc-time-btn') as HTMLButtonElement;
@@ -868,6 +877,7 @@ async function openManual() {
 
     modalContent.innerHTML = '<div class="text-secondary">Loading manual...</div>';
     modalOverlay.style.display = 'flex';
+    modalOkBtn.focus();
 
     const result = await api.readManual();
     if (result.success) {
@@ -971,6 +981,66 @@ disconnectBtn.addEventListener('click', async () => {
 
 window.addEventListener('keydown', (e) => {
     const isMenuOpen = hamburgerMenu.style.display === 'block';
+    const modalVisible = isModalOpen();
+
+    if (modalVisible) {
+        // Focus trapping
+        if (e.key === 'Tab') {
+            const focusables = Array.from(modal.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+                .filter(el => {
+                    const styles = window.getComputedStyle(el);
+                    return (el as any).offsetParent !== null && styles.display !== 'none' && styles.visibility !== 'hidden';
+                }) as HTMLElement[];
+
+            if (focusables.length > 0) {
+                const first = focusables[0];
+                const last = focusables[focusables.length - 1];
+                if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            } else {
+                e.preventDefault(); // Nowhere to go
+            }
+        }
+
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            closeModal();
+            return;
+        }
+
+        if (e.key === 'Enter') {
+            // Dialogues close with Enter if it's an "update" (modalConfirmDeleteBtn) or info-only (modalOkBtn)
+            if (modalConfirmDeleteBtn.style.display !== 'none' && !modalConfirmDeleteBtn.disabled) {
+                if (document.activeElement === modalConfirmDeleteBtn || document.activeElement === modalContent) {
+                    modalConfirmDeleteBtn.click();
+                    return;
+                }
+            } else if (modalOkBtn.style.display !== 'none') {
+                // Info-only can be closed with either Esc or Enter
+                e.preventDefault();
+                closeModal();
+                return;
+            }
+        }
+
+        // SWALLOW ALL OTHER KEY STROKES when modal is open
+        // This ensures "When a modal dialogue is visible, it is the only one receiving keyboard strokes."
+        const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName);
+        // Only allow basic navigation and selection within the modal
+        const allowedKeys = ['Tab', 'Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', ' '];
+        if (!isInput && !allowedKeys.includes(e.key)) {
+            e.preventDefault();
+        }
+
+        // Always stop propagation to background listeners when modal is open
+        e.stopPropagation();
+        return;
+    }
 
     if (e.key === 'Backspace' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         if (blobView.style.display === 'block') {
@@ -981,10 +1051,6 @@ window.addEventListener('keydown', (e) => {
     }
 
     if (e.key === 'Escape') {
-        if (modalOverlay.style.display === 'flex') {
-            closeModal();
-            return;
-        }
         if (isMenuOpen) {
             hamburgerMenu.style.display = 'none';
             sidebarHamburger.focus();
@@ -993,13 +1059,7 @@ window.addEventListener('keydown', (e) => {
     }
 
     if (e.key === 'Enter') {
-        if (modalOverlay.style.display === 'flex' && modalOkBtn.style.display !== 'none' && !modalConfirmDeleteBtn.disabled) {
-            // Only auto-close with Enter if specifically allowed or focusing something else
-            if (document.activeElement === modalOkBtn || document.activeElement === modalContent || document.activeElement?.tagName !== 'BUTTON') {
-                closeModal();
-                return;
-            }
-        }
+        // Handled in individual item listeners
     }
 
     if (isMenuOpen) {
@@ -1037,6 +1097,7 @@ window.addEventListener('keydown', (e) => {
     }
 
     if (e.key.toLowerCase() === 'r' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        if (modalVisible) return;
         if (blobView.style.display === 'block') {
             updateBlobList();
         } else {
@@ -1046,6 +1107,7 @@ window.addEventListener('keydown', (e) => {
 
     // Focus sidebar treeview (Cmd+E)
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        if (modalVisible) return;
         e.preventDefault();
         const activeTreeItem = sidebarTreeview.querySelector('.tree-item.active') as HTMLElement;
         const firstTreeItem = sidebarTreeview.querySelector('.tree-item') as HTMLElement;
@@ -1057,17 +1119,19 @@ window.addEventListener('keydown', (e) => {
     }
 
     if ((e.metaKey || e.ctrlKey) && (e.key === ',' || e.code === 'Comma')) {
+        if (modalVisible) return;
         e.preventDefault();
         openSettings();
     }
 
     if (e.key === 'F1' || ((e.metaKey || e.ctrlKey) && (e.key === '?' || e.code === 'Slash' && e.shiftKey))) {
+        if (modalVisible) return;
         e.preventDefault();
         openManual();
     }
 
     // Tab shortcuts
-    if (e.metaKey || e.ctrlKey) {
+    if ((e.metaKey || e.ctrlKey) && !modalVisible) {
         if (e.key >= '1' && e.key <= '9') {
             e.preventDefault();
             if (e.key === '9') {

@@ -18,6 +18,10 @@ Dialogues are typically closed with esc for bailing out, and enter for updating.
 
 Dialogues with only information can be closed with either.
 
+When a modal dialogue is visible, it is the only one receiving keyboard strokes.  
+It is not possible to tab out of a dialogue.  
+Do not have a cross for closing a dialogue, only buttons.
+
 # manual
 
 There must be a file `manual.md` describing how to use the application.
