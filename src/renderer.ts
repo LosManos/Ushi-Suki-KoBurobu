@@ -336,17 +336,31 @@ function updateBreadcrumbs() {
 
     currentContainerNameLabel.innerHTML = '';
 
+    const prefix = blobSearchInput.value;
+    const delimiter = blobDelimiterInput.value || '/';
+
+    const navigateToPath = (targetPath: string) => {
+        if (targetPath === prefix) return;
+
+        let focusItem: string | undefined = undefined;
+        if (prefix.startsWith(targetPath)) {
+            // We are going "up" or "staying"
+            const remaining = prefix.slice(targetPath.length);
+            const segments = remaining.split(delimiter).filter(s => s.length > 0);
+            if (segments.length > 0) {
+                focusItem = targetPath + segments[0] + delimiter;
+            }
+        }
+
+        blobSearchInput.value = targetPath;
+        updateBlobList(false, focusItem);
+    };
+
     const rootSpan = document.createElement('span');
     rootSpan.className = 'breadcrumb-item';
     rootSpan.textContent = currentContainer;
-    rootSpan.onclick = () => {
-        blobSearchInput.value = '';
-        updateBlobList();
-    };
+    rootSpan.onclick = () => navigateToPath('');
     currentContainerNameLabel.appendChild(rootSpan);
-
-    const prefix = blobSearchInput.value;
-    const delimiter = blobDelimiterInput.value || '/';
 
     if (prefix) {
         const parts = prefix.split(delimiter).filter(p => p.length > 0);
@@ -364,10 +378,7 @@ function updateBreadcrumbs() {
             segmentSpan.textContent = part;
 
             const capturedPath = currentPath;
-            segmentSpan.onclick = () => {
-                blobSearchInput.value = capturedPath;
-                updateBlobList();
-            };
+            segmentSpan.onclick = () => navigateToPath(capturedPath);
 
             currentContainerNameLabel.appendChild(segmentSpan);
         });
@@ -383,6 +394,8 @@ function navigateUp() {
         return;
     }
 
+    const itemToFocus = prefix;
+
     let cleanPrefix = prefix;
     if (prefix.endsWith(delimiter)) {
         cleanPrefix = prefix.slice(0, -1);
@@ -396,7 +409,7 @@ function navigateUp() {
     }
 
     clearSelection();
-    updateBlobList();
+    updateBlobList(false, itemToFocus);
 }
 
 async function performRecursiveCount(path: string, badgeElement: HTMLElement, containerOverride?: string) {
@@ -551,7 +564,7 @@ function closeModal() {
     }
 }
 
-async function updateBlobList(isLoadMore = false, focusFirst = false) {
+async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) {
     if (!currentContainer) return;
     updateBreadcrumbs();
 
@@ -716,15 +729,34 @@ async function updateBlobList(isLoadMore = false, focusFirst = false) {
             blobList.appendChild(loadMoreLi);
         }
 
-        // Ensure first blob is the tab entry point
-        const firstBlob = blobList.querySelector('.list-item:not(.empty)') as HTMLElement;
-        if (firstBlob) {
-            // ... wait, if we are loading more, we might want to keep the focus where it was.
-            // But for now, ensuring the roving index is consistent.
-            if (!isLoadMore) {
-                firstBlob.tabIndex = 0;
-                if (focusFirst) {
-                    firstBlob.focus();
+        // Handle focus restoration or initial focus
+        if (!isLoadMore) {
+            const allItems = Array.from(blobList.querySelectorAll('.list-item:not(.empty)')) as HTMLElement[];
+            if (allItems.length > 0) {
+                // Default: second all items to tabIndex -1
+                allItems.forEach(i => i.tabIndex = -1);
+
+                let targetItem: HTMLElement | null = null;
+                if (typeof focusItem === 'string') {
+                    targetItem = allItems.find(i => i.getAttribute('data-blob-name') === focusItem) || null;
+                }
+
+                if (!targetItem && (focusItem === true || typeof focusItem === 'string')) {
+                    targetItem = allItems[0];
+                }
+
+                if (targetItem) {
+                    targetItem.tabIndex = 0;
+                    if (focusItem) {
+                        targetItem.focus();
+                        // Ensure it's scrolled into view if it was focused by name
+                        if (typeof focusItem === 'string') {
+                            targetItem.scrollIntoView({ block: 'nearest' });
+                        }
+                    }
+                } else {
+                    // Always ensure at least the first item has tabIndex 0 for roving tabindex entry
+                    allItems[0].tabIndex = 0;
                 }
             }
         }
