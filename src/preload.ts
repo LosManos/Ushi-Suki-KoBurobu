@@ -19,5 +19,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.invoke('azure:deleteBlobs', containerName, blobNames),
     openExternal: (url: string) => ipcRenderer.invoke('utils:openExternal', url),
     openPath: (path: string) => ipcRenderer.invoke('utils:openPath', path),
+    getVersion: () => ipcRenderer.invoke('app:getVersion'),
     quit: () => ipcRenderer.send('app:quit')
 });

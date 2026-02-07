@@ -239,6 +239,10 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('app:getVersion', () => {
+        return app.getVersion();
+    });
+
     ipcMain.on('app:quit', () => {
         app.quit();
     });

@@ -38,6 +38,7 @@ const statusText = document.getElementById('status-text') as HTMLElement;
 const itemStatsCard = document.getElementById('item-stats-card') as HTMLElement;
 const itemCountLabel = document.getElementById('item-count') as HTMLElement;
 const blobListStats = document.getElementById('blob-list-stats') as HTMLElement;
+const footerVersion = document.getElementById('footer-version') as HTMLElement;
 
 const modalOverlay = document.getElementById('modal-overlay') as HTMLElement;
 const modal = modalOverlay.querySelector('.modal') as HTMLElement;
@@ -525,6 +526,8 @@ async function openSettings() {
     modalCancelBtn.style.display = 'none';
     modalConfirmDeleteBtn.style.display = 'none';
 
+    const version = await api.getVersion();
+
     modalContent.innerHTML = `
         <div class="settings-container">
             <div class="settings-section">
@@ -557,7 +560,7 @@ async function openSettings() {
                 <div class="about-card">
                     <div class="about-logo">📦</div>
                     <div class="settings-label">KoBurobu</div>
-                    <div class="about-version">v0.5.2</div>
+                    <div class="about-version">v${version}</div>
                     <div class="settings-description">Premium Azure Blob Storage Explorer</div>
                     <div style="margin-top: 0.5rem;">
                         <span id="btn-check-updates" class="btn-link-alt">Check for Updates</span>
@@ -746,4 +749,10 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-window.addEventListener('load', () => connectionStringInput.focus());
+window.addEventListener('load', async () => {
+    connectionStringInput.focus();
+    const version = await api.getVersion();
+    if (footerVersion) {
+        footerVersion.textContent = `v${version}`;
+    }
+});
