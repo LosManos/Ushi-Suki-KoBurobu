@@ -18,6 +18,7 @@ const sidebarHamburger = document.getElementById('sidebar-hamburger') as HTMLBut
 const hamburgerMenu = document.getElementById('hamburger-menu') as HTMLElement;
 const menuSettings = document.getElementById('menu-settings') as HTMLButtonElement;
 const menuAbout = document.getElementById('menu-about') as HTMLButtonElement;
+const menuAccount = document.getElementById('menu-account') as HTMLButtonElement;
 
 const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
 
@@ -510,6 +511,19 @@ sidebarHamburger.addEventListener('click', (e) => {
 document.addEventListener('click', () => hamburgerMenu.style.display = 'none');
 menuSettings.addEventListener('click', openSettings);
 menuAbout.addEventListener('click', openSettings);
+
+menuAccount.addEventListener('click', () => {
+    connectSection.style.display = 'block';
+    explorerSection.style.display = 'none';
+    connectionStringInput.focus();
+});
+
+connectionStringInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        connectBtn.click();
+    }
+});
 
 headerTimeToggle.addEventListener('change', () => {
     useUTC = headerTimeToggle.checked;
