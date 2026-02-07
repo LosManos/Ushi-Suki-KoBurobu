@@ -17,6 +17,7 @@ The following shortcuts are available to speed up your workflow:
 | --- | --- |
 | `Enter` | Connect Account (when focused on Connection String) |
 | `Cmd + D` / `Ctrl + D` | Disconnect from Storage Account |
+| `Cmd + Q` / `Ctrl + Q` | Quit Application |
 | `Cmd + A` / `Ctrl + A` | Select all blobs in current view |
 | `Space` | Toggle mark/selection of focused blob |
 | `Click` | Mark/selection of blob |
@@ -24,19 +25,27 @@ The following shortcuts are available to speed up your workflow:
 | `Enter` | Open blob as image preview |
 | `Right-click` | Open blob as image preview |
 | `Del` / `Alt + Backspace` | Delete all marked/selected blobs (requires confirmation) |
-| `↑` / `↓` | Navigate through container or blob lists |
+| `↑` / `↓` | Navigate through treeview, container or blob lists |
 | `Backspace` | Go back one level or to Container List |
 | `R` | Refresh current list (Containers or Blobs) |
 | `P` | Focus Page Size dropdown (in Blob View) |
-| `Cmd + E` / `Ctrl + E` | Switch to Containers View |
+| `Cmd + E` / `Ctrl + E` | Focus Sidebar Treeview |
 | `Cmd + ,` / `Ctrl + ,` | Switch to Settings View |
 | `Cmd + F` / `Ctrl + F` | Search/Filter Blobs (in Blob View) |
 | `Cmd + I` / `Ctrl + I` | Blob Counter: Count all in folder (server) or loaded items (client) |
-| `Esc` / `Enter` | Close informational dialogues (like Blob Properties) |
+| `Cmd + 1-8` | Switch to Tab (1-8 for opened containers) |
+| `Cmd + 9` | Switch to Last Tab |
+| `Cmd + W` | Close current container tab |
+| `Alt + Space` | Toggle Hamburger Menu (navigatable with arrows) |
+| `F1` / `Cmd + ?` | Open this Manual |
+| `Esc` | Bails out of dialogues and closes menus |
+| `Enter` | Updates/confirms in dialogues or closes info-only dialogues |
+| `Backspace` | Navigate up one level or switch to Containers View (if at root) |
 
 ## Navigation
 
 - **Dashboard**: The main screen for connecting and seeing account stats.
-- **Containers**: List of all available containers in the account.
+- **Tabs**: Containers open in separate tabs. Switching tabs preserves search filters and navigation state. The first item in a container is automatically focused upon opening. Closing all tabs returns to the Containers overview.
+- **Sidebar Treeview**: Quickly jump between containers or open new ones using the list in the sidebar.
 - **Hierarchical Navigation**: Use breadcrumbs at the top of the blob list to quickly jump back to parent folders.
 - **Settings**: Manage application preferences, such as toggling between Local and UTC time display.

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import { BlobServiceClient } from '@azure/storage-blob';
 
@@ -218,6 +218,73 @@ app.whenReady().then(() => {
             console.error('Delete Blobs Error:', error);
             return { success: false, error: error.message };
         }
+    });
+
+    ipcMain.handle('azure:uploadBlob', async (_event, containerName: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const { dialog } = require('electron');
+            const result = await dialog.showOpenDialog({
+                properties: ['openFile', 'multiSelections']
+            });
+
+            if (result.canceled) return { success: true, error: 'Canceled' };
+
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const fs = require('fs');
+
+            for (const filePath of result.filePaths) {
+                const blobName = path.basename(filePath);
+                const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+                const fileBuffer = fs.readFileSync(filePath);
+                await blockBlobClient.upload(fileBuffer, fileBuffer.length);
+            }
+
+            return { success: true };
+        } catch (error: any) {
+            console.error('Upload Blob Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('utils:openExternal', async (_event, url: string) => {
+        try {
+            await shell.openExternal(url);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('utils:openPath', async (_event, relativePath: string) => {
+        try {
+            const absolutePath = path.join(app.getAppPath(), relativePath);
+            await shell.openPath(absolutePath);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('app:getVersion', () => {
+        return app.getVersion();
+    });
+
+    ipcMain.handle('utils:readManual', async () => {
+        try {
+            const fs = require('fs').promises;
+            const { marked } = require('marked');
+            const manualPath = path.join(app.getAppPath(), 'manual.md');
+            const content = await fs.readFile(manualPath, 'utf-8');
+            const html = marked.parse(content);
+            return { success: true, content: html };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.on('app:quit', () => {
+        app.quit();
     });
 
     app.on('activate', () => {

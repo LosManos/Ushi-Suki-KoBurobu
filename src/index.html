@@ -15,15 +15,32 @@
 <body>
     <div class="app-container">
         <aside class="sidebar">
-            <div class="logo">
-                <span class="logo-icon">📦</span>
-                <h1>KoBurobu</h1>
+            <div class="sidebar-header">
+                <button id="sidebar-hamburger" class="hamburger-btn" aria-label="Menu" title="Menu (Alt+Space)">
+                    <span class="hamburger-icon">☰</span>
+                </button>
+                <div id="hamburger-menu" class="dropdown-menu" style="display: none;">
+                    <button class="dropdown-item" id="menu-account">Account...</button>
+                    <button class="dropdown-item" id="menu-settings">Settings... <span
+                            class="shortcut">Cmd+,</span></button>
+                    <button class="dropdown-item" id="menu-manual">Manual... <span class="shortcut">F1</span></button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" id="menu-about">About...</button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" id="menu-quit">Quit <span class="shortcut">Cmd+Q</span></button>
+                </div>
+                <div id="sidebar-account-name" class="account-name-header">Not Connected</div>
             </div>
-            <nav>
-                <button class="nav-item">Dashboard</button>
-                <button class="nav-item" data-tooltip="Containers (Cmd+E)"
-                    title="Containers (Cmd+E)">Containers</button>
-                <button class="nav-item" data-tooltip="Settings (Cmd+,)" title="Settings (Cmd+,)">Settings</button>
+            <nav id="sidebar-nav">
+                <button class="nav-item active" data-section="connect-section">Connect</button>
+                <div id="explorer-nav" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+                    <div class="sidebar-section-title" title="Focus Sidebar Treeview (Cmd+E)">
+                        Explorer <span id="container-count" class="sidebar-count">0</span>
+                    </div>
+                    <ul id="sidebar-treeview" class="treeview">
+                        <!-- Containers will be loaded here -->
+                    </ul>
+                </div>
             </nav>
         </aside>
         <main class="content">
@@ -61,40 +78,18 @@
                 </div>
             </section>
 
-            <section id="explorer-section" class="dashboard" style="display: none;">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <label>Containers</label>
-                        <div id="container-count" class="value">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <label>Storage Account</label>
-                        <div id="account-name" class="value">None</div>
-                    </div>
-                    <div class="stat-card" id="item-stats-card" style="display: none;">
-                        <label id="item-stats-label">Items in Folder</label>
-                        <div id="item-count" class="value">0</div>
-                    </div>
+            <section id="explorer-section" class="dashboard" style="display: none; padding-top: 0;">
+                <div id="tab-bar" class="tab-bar">
                 </div>
-
-                <div id="container-view">
-                    <div class="container-list-wrapper">
-                        <div class="list-header">
-                            <h3>Containers</h3>
-                            <button id="refresh-containers-btn" class="btn btn-secondary btn-sm"
-                                data-tooltip="Refresh (R)" title="Refresh (R)">Refresh</button>
-                        </div>
-                        <ul id="container-list" class="data-list">
-                            <!-- Containers will be injected here -->
-                            <li class="list-item empty">No containers found.</li>
-                        </ul>
+                <div id="container-view" class="placeholder-view">
+                    <div class="welcome-card">
+                        <h3>Explorer</h3>
+                        <p>Select a container from the sidebar to start exploring your blobs.</p>
                     </div>
                 </div>
 
                 <div id="blob-view" style="display: none;">
                     <div class="breadcrumb">
-                        <button id="back-to-containers" class="btn btn-link" data-tooltip="Back (Backspace)"
-                            title="Back (Backspace)">← Back</button>
                         <h3 id="current-container-name">Container Name</h3>
                     </div>
                     <div class="container-list-wrapper">
@@ -124,25 +119,12 @@
                         </div>
                         <ul id="blob-list" class="data-list">
                             <!-- Blobs will be injected here -->
-                            <li class="list-item empty">No blobs found in this container.</li>
+                            <li class="list-item empty">Select a container from the sidebar to view its blobs.</li>
                         </ul>
                     </div>
 
             </section>
 
-            <section id="settings-section" class="dashboard" style="display: none;">
-                <div class="container-list-wrapper">
-                    <div class="list-header">
-                        <h3>Settings</h3>
-                    </div>
-                    <div class="settings-group">
-                        <label class="settings-label">Time Display Preference</label>
-                        <div class="toggle-group">
-                            <button id="local-time-btn" class="btn btn-secondary btn-sm active">Local Time</button>
-                            <button id="utc-time-btn" class="btn btn-secondary btn-sm">UTC</button>
-                        </div>
-                    </div>
-                </div>
             </section>
         </main>
     </div>
@@ -150,8 +132,6 @@
         <div class="modal">
             <div class="modal-header">
                 <h3>Blob Properties</h3>
-                <button id="close-modal-btn" class="close-btn" data-tooltip="Close (Esc)"
-                    title="Close (Esc)">&times;</button>
             </div>
             <div id="modal-content" class="modal-content" tabindex="0">
                 <!-- Properties will be injected here -->

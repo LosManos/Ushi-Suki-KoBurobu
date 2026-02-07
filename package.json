@@ -1,6 +1,6 @@
 {
   "name": "koburobu",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "This project is for handling blob storage in Azure",
   "main": "dist/main.js",
   "scripts": {
@@ -13,10 +13,12 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@types/marked": "^5.0.2",
     "electron": "^40.0.0",
     "typescript": "^5.7.0"
   },
   "dependencies": {
-    "@azure/storage-blob": "^12.30.0"
+    "@azure/storage-blob": "^12.30.0",
+    "marked": "^17.0.1"
   }
 }
