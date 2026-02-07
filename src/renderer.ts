@@ -30,13 +30,13 @@ const navConnectBtn = document.querySelector('.nav-item[data-section="connect-se
 const containerList = document.getElementById('container-list') as HTMLUListElement;
 const blobList = document.getElementById('blob-list') as HTMLUListElement;
 const containerCountLabel = document.getElementById('container-count') as HTMLElement;
-const accountNameLabel = document.getElementById('account-name') as HTMLElement;
+const accountNameLabel = document.getElementById('account-name') as HTMLElement | null;
 const sidebarAccountNameLabel = document.getElementById('sidebar-account-name') as HTMLElement;
 const currentContainerNameLabel = document.getElementById('current-container-name') as HTMLElement;
 const connectionStatus = document.getElementById('connection-status') as HTMLElement;
 const statusText = document.getElementById('status-text') as HTMLElement;
-const itemStatsCard = document.getElementById('item-stats-card') as HTMLElement;
-const itemCountLabel = document.getElementById('item-count') as HTMLElement;
+const itemStatsCard = document.getElementById('item-stats-card') as HTMLElement | null;
+const itemCountLabel = document.getElementById('item-count') as HTMLElement | null;
 const blobListStats = document.getElementById('blob-list-stats') as HTMLElement;
 const footerVersion = document.getElementById('footer-version') as HTMLElement;
 
@@ -311,11 +311,19 @@ async function performRecursiveCount(path: string, badgeElement: HTMLElement, co
 function countLoadedItems() {
     if (blobView.style.display !== 'none') {
         const loadedItems = blobList.querySelectorAll('.list-item:not(.empty):not(.load-more-item)').length;
-        const totalIndicator = itemCountLabel.textContent?.includes('+') ? '+' : '';
-        itemCountLabel.textContent = loadedItems.toString() + totalIndicator;
+        if (itemCountLabel) {
+            const totalIndicator = itemCountLabel.textContent?.includes('+') ? '+' : '';
+            itemCountLabel.textContent = loadedItems.toString() + totalIndicator;
+        }
+        // Update blob list stats in header too
+        if (blobListStats) {
+            blobListStats.textContent = `(${loadedItems} items loaded)`;
+        }
     } else if (containerView.style.display !== 'none') {
         const loadedContainers = containerList.querySelectorAll('.list-item:not(.empty)').length;
-        containerCountLabel.textContent = loadedContainers.toString();
+        if (containerCountLabel) {
+            containerCountLabel.textContent = loadedContainers.toString();
+        }
     }
 }
 
@@ -512,6 +520,7 @@ async function updateBlobList(isLoadMore = false) {
         const firstBlob = blobList.querySelector('.list-item:not(.empty)') as HTMLElement;
         if (firstBlob) firstBlob.tabIndex = 0;
         currentContinuationToken = result.continuationToken;
+        countLoadedItems();
     }
 }
 
@@ -657,7 +666,7 @@ connectBtn.addEventListener('click', async () => {
         containerView.style.display = 'none'; // Hide container grid
         blobView.style.display = 'block';    // Show empty blob view
         navConnectBtn.tabIndex = -1;         // Skip in tab order when connected
-        accountNameLabel.textContent = result.accountName;
+        if (accountNameLabel) accountNameLabel.textContent = result.accountName;
         sidebarAccountNameLabel.textContent = result.accountName;
         updateContainerList();
     }

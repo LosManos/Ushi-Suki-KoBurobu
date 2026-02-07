@@ -33,7 +33,9 @@
             <nav id="sidebar-nav">
                 <button class="nav-item active" data-section="connect-section">Connect</button>
                 <div id="explorer-nav" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
-                    <div class="sidebar-section-title" title="Focus Sidebar Treeview (Cmd+E)">Explorer</div>
+                    <div class="sidebar-section-title" title="Focus Sidebar Treeview (Cmd+E)">
+                        Explorer <span id="container-count" class="sidebar-count">0</span>
+                    </div>
                     <ul id="sidebar-treeview" class="treeview">
                         <!-- Containers will be loaded here -->
                     </ul>
@@ -76,21 +78,6 @@
             </section>
 
             <section id="explorer-section" class="dashboard" style="display: none;">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <label>Containers</label>
-                        <div id="container-count" class="value">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <label>Storage Account</label>
-                        <div id="account-name" class="value">None</div>
-                    </div>
-                    <div class="stat-card" id="item-stats-card" style="display: none;">
-                        <label id="item-stats-label">Items in Folder</label>
-                        <div id="item-count" class="value">0</div>
-                    </div>
-                </div>
-
                 <div id="container-view">
                     <div class="container-list-wrapper">
                         <div class="list-header">
