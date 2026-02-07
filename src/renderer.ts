@@ -20,6 +20,7 @@ const menuSettings = document.getElementById('menu-settings') as HTMLButtonEleme
 const menuAbout = document.getElementById('menu-about') as HTMLButtonElement;
 const menuAccount = document.getElementById('menu-account') as HTMLButtonElement;
 const menuQuit = document.getElementById('menu-quit') as HTMLButtonElement;
+const menuManual = document.getElementById('menu-manual') as HTMLButtonElement;
 
 const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
 
@@ -615,6 +616,28 @@ async function openSettings() {
     modalContent.focus();
 }
 
+async function openManual() {
+    lastActiveElement = document.activeElement as HTMLElement;
+    modalTitle.textContent = 'User Manual';
+    modal.classList.add('large');
+
+    modalOkBtn.style.display = 'inline-block';
+    modalOkBtn.textContent = 'Close';
+    modalCancelBtn.style.display = 'none';
+    modalConfirmDeleteBtn.style.display = 'none';
+
+    modalContent.innerHTML = '<div class="text-secondary">Loading manual...</div>';
+    modalOverlay.style.display = 'flex';
+
+    const result = await api.readManual();
+    if (result.success) {
+        modalContent.innerHTML = `<div class="manual-container">${result.content}</div>`;
+    } else {
+        modalContent.innerHTML = `<div class="text-danger">Error loading manual: ${result.error}</div>`;
+    }
+    modalContent.focus();
+}
+
 // Event Listeners
 sidebarHamburger.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -624,6 +647,7 @@ sidebarHamburger.addEventListener('click', (e) => {
 document.addEventListener('click', () => hamburgerMenu.style.display = 'none');
 menuSettings.addEventListener('click', openSettings);
 menuAbout.addEventListener('click', openSettings);
+menuManual.addEventListener('click', openManual);
 menuQuit.addEventListener('click', () => {
     api.quit();
 });
@@ -698,6 +722,16 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
+    if (e.key === 'Enter') {
+        if (modalOverlay.style.display === 'flex' && modalOkBtn.style.display !== 'none' && !modalConfirmDeleteBtn.disabled) {
+            // Only auto-close with Enter if specifically allowed or focusing something else
+            if (document.activeElement === modalOkBtn || document.activeElement === modalContent || document.activeElement?.tagName !== 'BUTTON') {
+                closeModal();
+                return;
+            }
+        }
+    }
+
     if (isMenuOpen) {
         const menuItems = Array.from(hamburgerMenu.querySelectorAll('.dropdown-item')) as HTMLElement[];
         const currentIndex = menuItems.indexOf(document.activeElement as HTMLElement);
@@ -755,6 +789,11 @@ window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && (e.key === ',' || e.code === 'Comma')) {
         e.preventDefault();
         openSettings();
+    }
+
+    if (e.key === 'F1' || ((e.metaKey || e.ctrlKey) && (e.key === '?' || e.code === 'Slash' && e.shiftKey))) {
+        e.preventDefault();
+        openManual();
     }
 });
 

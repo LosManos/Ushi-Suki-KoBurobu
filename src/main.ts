@@ -243,6 +243,19 @@ app.whenReady().then(() => {
         return app.getVersion();
     });
 
+    ipcMain.handle('utils:readManual', async () => {
+        try {
+            const fs = require('fs').promises;
+            const { marked } = require('marked');
+            const manualPath = path.join(app.getAppPath(), 'manual.md');
+            const content = await fs.readFile(manualPath, 'utf-8');
+            const html = marked.parse(content);
+            return { success: true, content: html };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
     ipcMain.on('app:quit', () => {
         app.quit();
     });
