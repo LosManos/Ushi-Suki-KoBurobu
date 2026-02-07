@@ -32,7 +32,8 @@ The following shortcuts are available to speed up your workflow:
 | `Cmd + ,` / `Ctrl + ,` | Switch to Settings View |
 | `Cmd + F` / `Ctrl + F` | Search/Filter Blobs (in Blob View) |
 | `Cmd + I` / `Ctrl + I` | Blob Counter: Count all in folder (server) or loaded items (client) |
-| `Esc` / `Enter` | Close informational dialogues (like Blob Properties) |
+| `Alt + Space` | Toggle Hamburger Menu (navigatable with arrows) |
+| `Esc` / `Enter` | Close dialogues and menus (like Settings or Hamburger Menu) |
 
 ## Navigation
 

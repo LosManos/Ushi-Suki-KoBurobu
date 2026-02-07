@@ -16,16 +16,20 @@
     <div class="app-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <button id="sidebar-hamburger" class="hamburger-btn" aria-label="Menu" title="Menu">
+                <button id="sidebar-hamburger" class="hamburger-btn" aria-label="Menu" title="Menu (Alt+Space)">
                     <span class="hamburger-icon">☰</span>
                 </button>
+                <div id="hamburger-menu" class="dropdown-menu" style="display: none;">
+                    <button class="dropdown-item" id="menu-settings">Settings... <span
+                            class="shortcut">Cmd+,</span></button>
+                    <div class="dropdown-divider"></div>
+                    <button class="dropdown-item" id="menu-about">About...</button>
+                </div>
                 <div id="sidebar-account-name" class="account-name-header">Not Connected</div>
             </div>
-            <nav>
-                <button class="nav-item">Dashboard</button>
-                <button class="nav-item" data-tooltip="Containers (Cmd+E)"
-                    title="Containers (Cmd+E)">Containers</button>
-                <button class="nav-item" data-tooltip="Settings (Cmd+,)" title="Settings (Cmd+,)">Settings</button>
+            <nav id="sidebar-nav">
+                <button class="nav-item active" data-section="connect-section">Connect</button>
+                <button class="nav-item" data-section="explorer-section" style="display: none;">Explorer</button>
             </nav>
         </aside>
         <main class="content">
@@ -132,19 +136,6 @@
 
             </section>
 
-            <section id="settings-section" class="dashboard" style="display: none;">
-                <div class="container-list-wrapper">
-                    <div class="list-header">
-                        <h3>Settings</h3>
-                    </div>
-                    <div class="settings-group">
-                        <label class="settings-label">Time Display Preference</label>
-                        <div class="toggle-group">
-                            <button id="local-time-btn" class="btn btn-secondary btn-sm active">Local Time</button>
-                            <button id="utc-time-btn" class="btn btn-secondary btn-sm">UTC</button>
-                        </div>
-                    </div>
-                </div>
             </section>
         </main>
     </div>

@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, shell } from 'electron';
 import * as path from 'path';
 import { BlobServiceClient } from '@azure/storage-blob';
 
@@ -216,6 +216,25 @@ app.whenReady().then(() => {
             return { success: true, results };
         } catch (error: any) {
             console.error('Delete Blobs Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('utils:openExternal', async (_event, url: string) => {
+        try {
+            await shell.openExternal(url);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('utils:openPath', async (_event, relativePath: string) => {
+        try {
+            const absolutePath = path.join(app.getAppPath(), relativePath);
+            await shell.openPath(absolutePath);
+            return { success: true };
+        } catch (error: any) {
             return { success: false, error: error.message };
         }
     });
