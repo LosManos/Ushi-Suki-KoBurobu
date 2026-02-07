@@ -37,28 +37,45 @@ body {
     border-right: 1px solid var(--glass-border);
     display: flex;
     flex-direction: column;
-    padding: 2rem 1rem;
+    padding: 1rem;
 }
 
-.logo {
+.sidebar-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
+    padding: 0.5rem 0;
 }
 
-.logo-icon {
-    font-size: 2rem;
+.hamburger-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    line-height: 1;
 }
 
-.logo h1 {
+.hamburger-btn:hover {
+    background-color: var(--glass-bg);
+    color: var(--text-primary);
+}
+
+.account-name-header {
     font-family: 'Outfit', sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 nav {

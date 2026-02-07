@@ -24,6 +24,7 @@ const containerList = document.getElementById('container-list') as HTMLUListElem
 const blobList = document.getElementById('blob-list') as HTMLUListElement;
 const containerCountLabel = document.getElementById('container-count') as HTMLElement;
 const accountNameLabel = document.getElementById('account-name') as HTMLElement;
+const sidebarAccountNameLabel = document.getElementById('sidebar-account-name') as HTMLElement;
 const currentContainerNameLabel = document.getElementById('current-container-name') as HTMLElement;
 const connectionStatus = document.getElementById('connection-status') as HTMLElement;
 const statusText = document.getElementById('status-text') as HTMLElement;
@@ -675,6 +676,7 @@ connectBtn.addEventListener('click', async () => {
         explorerSection.style.display = 'block';
         settingsSection.style.display = 'none';
         accountNameLabel.textContent = result.accountName;
+        sidebarAccountNameLabel.textContent = result.accountName;
 
         connectionStatus.classList.remove('disconnected');
         connectionStatus.classList.add('connected');
@@ -714,6 +716,7 @@ disconnectBtn.addEventListener('click', async () => {
     disconnectBtn.style.display = 'none';
 
     connectionStringInput.value = '';
+    sidebarAccountNameLabel.textContent = 'Not Connected';
     currentContainer = null;
     connectionStringInput.focus();
 });
