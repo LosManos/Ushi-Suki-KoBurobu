@@ -33,13 +33,18 @@ The following shortcuts are available to speed up your workflow:
 | `Cmd + ,` / `Ctrl + ,` | Switch to Settings View |
 | `Cmd + F` / `Ctrl + F` | Search/Filter Blobs (in Blob View) |
 | `Cmd + I` / `Ctrl + I` | Blob Counter: Count all in folder (server) or loaded items (client) |
+| `Cmd + 1-8` | Switch to Tab (1-8 for opened containers) |
+| `Cmd + 9` | Switch to Last Tab |
+| `Cmd + W` | Close current container tab |
 | `Alt + Space` | Toggle Hamburger Menu (navigatable with arrows) |
 | `F1` / `Cmd + ?` | Open this Manual |
 | `Esc` / `Enter` | Close dialogues and menus (like Settings or Hamburger Menu) |
+| `Backspace` | Navigate up one level or switch to Containers View (if at root) |
 
 ## Navigation
 
 - **Dashboard**: The main screen for connecting and seeing account stats.
-- **Sidebar Treeview**: Quickly jump between containers using the list in the sidebar.
+- **Tabs**: Containers open in separate tabs. Switching tabs preserves search filters and navigation state. The first item in a container is automatically focused upon opening. Closing all tabs returns to the Containers overview.
+- **Sidebar Treeview**: Quickly jump between containers or open new ones using the list in the sidebar.
 - **Hierarchical Navigation**: Use breadcrumbs at the top of the blob list to quickly jump back to parent folders.
 - **Settings**: Manage application preferences, such as toggling between Local and UTC time display.

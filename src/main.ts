@@ -220,6 +220,33 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:uploadBlob', async (_event, containerName: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const { dialog } = require('electron');
+            const result = await dialog.showOpenDialog({
+                properties: ['openFile', 'multiSelections']
+            });
+
+            if (result.canceled) return { success: true, error: 'Canceled' };
+
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const fs = require('fs');
+
+            for (const filePath of result.filePaths) {
+                const blobName = path.basename(filePath);
+                const blockBlobClient = containerClient.getBlockBlobClient(blobName);
+                const fileBuffer = fs.readFileSync(filePath);
+                await blockBlobClient.upload(fileBuffer, fileBuffer.length);
+            }
+
+            return { success: true };
+        } catch (error: any) {
+            console.error('Upload Blob Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
     ipcMain.handle('utils:openExternal', async (_event, url: string) => {
         try {
             await shell.openExternal(url);

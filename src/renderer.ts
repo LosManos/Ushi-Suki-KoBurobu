@@ -3,14 +3,13 @@ const connectSection = document.getElementById('connect-section') as HTMLElement
 const explorerSection = document.getElementById('explorer-section') as HTMLElement;
 const containerView = document.getElementById('container-view') as HTMLElement;
 const blobView = document.getElementById('blob-view') as HTMLElement;
+const tabBar = document.getElementById('tab-bar') as HTMLElement;
 
 const connectionStringInput = document.getElementById('connection-string') as HTMLInputElement;
 const connectBtn = document.getElementById('connect-btn') as HTMLButtonElement;
 const disconnectBtn = document.getElementById('disconnect-btn') as HTMLButtonElement;
-const refreshContainersBtn = document.getElementById('refresh-containers-btn') as HTMLButtonElement;
 const refreshBlobsBtn = document.getElementById('refresh-blobs-btn') as HTMLButtonElement;
 const pageSizeSelect = document.getElementById('page-size-select') as HTMLSelectElement;
-const backToContainersBtn = document.getElementById('back-to-containers') as HTMLButtonElement;
 const blobSearchInput = document.getElementById('blob-search-input') as HTMLInputElement;
 const blobDelimiterInput = document.getElementById('blob-delimiter-input') as HTMLInputElement;
 const searchBlobsBtn = document.getElementById('search-blobs-btn') as HTMLButtonElement;
@@ -21,6 +20,7 @@ const menuAbout = document.getElementById('menu-about') as HTMLButtonElement;
 const menuAccount = document.getElementById('menu-account') as HTMLButtonElement;
 const menuQuit = document.getElementById('menu-quit') as HTMLButtonElement;
 const menuManual = document.getElementById('menu-manual') as HTMLButtonElement;
+const uploadBlobBtn = document.getElementById('upload-blob-btn') as HTMLButtonElement;
 
 const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
 
@@ -28,7 +28,6 @@ const explorerNav = document.getElementById('explorer-nav') as HTMLElement;
 const sidebarTreeview = document.getElementById('sidebar-treeview') as HTMLUListElement;
 const navConnectBtn = document.querySelector('.nav-item[data-section="connect-section"]') as HTMLButtonElement;
 
-const containerList = document.getElementById('container-list') as HTMLUListElement;
 const blobList = document.getElementById('blob-list') as HTMLUListElement;
 const containerCountLabel = document.getElementById('container-count') as HTMLElement;
 const accountNameLabel = document.getElementById('account-name') as HTMLElement | null;
@@ -58,6 +57,8 @@ let currentContinuationToken: string | undefined = undefined;
 let useUTC = false;
 let lastActiveElement: HTMLElement | null = null;
 let selectedBlobs: Set<string> = new Set();
+let tabs: any[] = [];
+let activeTabId: string = 'containers-home';
 
 function toggleBlobSelection(blobName: string, element: HTMLElement) {
     if (selectedBlobs.has(blobName)) {
@@ -111,43 +112,16 @@ function formatDateTime(dateStr: string | Date): string {
 }
 
 async function updateContainerList() {
-    containerList.innerHTML = '<li class="list-item empty">Loading containers...</li>';
-    sidebarTreeview.innerHTML = '';
+    sidebarTreeview.innerHTML = '<li class="tree-item disabled">Loading...</li>';
 
     const result = await api.listContainers();
     if (result.success) {
         containerCountLabel.textContent = result.containers.length.toString();
+        sidebarTreeview.innerHTML = '';
         if (result.containers.length === 0) {
-            containerList.innerHTML = '<li class="list-item empty">No containers found.</li>';
+            sidebarTreeview.innerHTML = '<li class="tree-item disabled" tabIndex="0">No containers</li>';
         } else {
-            containerList.innerHTML = '';
             result.containers.forEach((container: any) => {
-                // Main view item
-                const li = document.createElement('li');
-                li.className = 'list-item';
-                li.tabIndex = 0;
-                li.setAttribute('data-container-name', container.name);
-                li.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span>📁</span>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span>${container.name}</span>
-                            <span class="count-trigger" title="Count items (Cmd+I)">#</span>
-                        </div>
-                    </div>
-                    <span class="text-secondary" style="font-size: 0.8rem">${formatDateTime(container.lastModified)}</span>
-                `;
-                li.onclick = (e) => {
-                    const target = e.target as HTMLElement;
-                    if (target.classList.contains('count-trigger')) {
-                        e.stopPropagation();
-                        performRecursiveCount('', target, container.name);
-                        return;
-                    }
-                    openContainer(container.name);
-                };
-                containerList.appendChild(li);
-
                 // Sidebar tree item
                 const treeLi = document.createElement('li');
                 treeLi.className = 'tree-item';
@@ -156,14 +130,25 @@ async function updateContainerList() {
                 treeLi.innerHTML = `
                     <span class="tree-item-icon">📁</span>
                     <span class="tree-item-text">${container.name}</span>
+                    <span class="count-trigger-sidebar" title="Count items (Cmd+I)">#</span>
                 `;
-                treeLi.onclick = () => openContainer(container.name);
+                treeLi.onclick = (e) => {
+                    if ((e.target as HTMLElement).classList.contains('count-trigger-sidebar')) {
+                        e.stopPropagation();
+                        performRecursiveCount('', e.target as HTMLElement, container.name);
+                        return;
+                    }
+                    openContainer(container.name);
+                };
                 treeLi.onkeydown = (e) => {
+                    const items = Array.from(sidebarTreeview.querySelectorAll('.tree-item')) as HTMLElement[];
+                    const index = items.indexOf(treeLi);
+
                     if (e.key === 'Enter') {
                         openContainer(container.name);
                     } else if (e.key === 'ArrowDown') {
                         e.preventDefault();
-                        const next = treeLi.nextElementSibling as HTMLElement;
+                        const next = items[index + 1];
                         if (next) {
                             treeLi.tabIndex = -1;
                             next.tabIndex = 0;
@@ -171,21 +156,38 @@ async function updateContainerList() {
                         }
                     } else if (e.key === 'ArrowUp') {
                         e.preventDefault();
-                        const prev = treeLi.previousElementSibling as HTMLElement;
+                        const prev = items[index - 1];
                         if (prev) {
                             treeLi.tabIndex = -1;
                             prev.tabIndex = 0;
                             prev.focus();
                         }
-                    } else if (e.key === 'ArrowRight') {
+                    } else if (e.key === 'Home') {
                         e.preventDefault();
-                        blobSearchInput.focus();
-                    } else if (e.key === 'Tab' && !e.shiftKey) {
+                        const first = items[0];
+                        if (first) {
+                            treeLi.tabIndex = -1;
+                            first.tabIndex = 0;
+                            first.focus();
+                        }
+                    } else if (e.key === 'End') {
+                        e.preventDefault();
+                        const last = items[items.length - 1];
+                        if (last) {
+                            treeLi.tabIndex = -1;
+                            last.tabIndex = 0;
+                            last.focus();
+                        }
+                    } else if (e.key === 'Tab' && !e.shiftKey && activeTabId === container.name) {
                         const firstBlob = blobList.querySelector('.list-item:not(.empty)') as HTMLElement;
                         if (firstBlob) {
                             e.preventDefault();
                             firstBlob.focus();
                         }
+                    } else if (e.key.toLowerCase() === 'i' && (e.metaKey || e.ctrlKey)) {
+                        e.preventDefault();
+                        const trigger = treeLi.querySelector('.count-trigger-sidebar') as HTMLElement;
+                        if (trigger) performRecursiveCount('', trigger, container.name);
                     }
                 };
                 sidebarTreeview.appendChild(treeLi);
@@ -194,32 +196,139 @@ async function updateContainerList() {
             const firstTreeItem = sidebarTreeview.querySelector('.tree-item') as HTMLElement;
             if (firstTreeItem) {
                 firstTreeItem.tabIndex = 0;
-                firstTreeItem.focus();
+                if (document.activeElement === document.body || document.activeElement?.closest('#connect-section')) {
+                    firstTreeItem.focus();
+                }
             }
         }
     } else {
-        containerList.innerHTML = `<li class="list-item empty text-danger">Error: ${result.error}</li>`;
+        sidebarTreeview.innerHTML = `<li class="tree-item disabled text-danger" tabIndex="0">Error: ${result.error}</li>`;
     }
 }
 
 async function openContainer(name: string) {
-    currentContainer = name;
-    blobSearchInput.value = '';
-    clearSelection();
-    updateBreadcrumbs();
-    containerView.style.display = 'none';
-    blobView.style.display = 'block';
-    updateBlobList();
+    const existingTab = tabs.find(t => t.id === name);
+
+    if (existingTab) {
+        switchTab(name);
+    } else {
+        const newTab = {
+            id: name,
+            name: name,
+            prefix: '',
+            delimiter: '/',
+            pageSize: '100',
+            searchTerm: ''
+        };
+        tabs.push(newTab);
+        renderTabs();
+        switchTab(name);
+    }
+}
+
+function renderTabs() {
+    const renderedTabs = tabs.map(tab => `
+        <button class="tab-item ${activeTabId === tab.id ? 'active' : ''}" data-tab-id="${tab.id}">
+            <span>📁 ${tab.name}</span>
+            <div class="tab-close" data-tab-id="${tab.id}">&times;</div>
+        </button>
+    `).join('');
+
+    tabBar.innerHTML = renderedTabs;
+    tabBar.style.display = tabs.length > 0 ? 'flex' : 'none';
+
+    // Add event listeners
+    tabBar.querySelectorAll('.tab-item').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            if (target.classList.contains('tab-close')) {
+                e.stopPropagation();
+                closeTab(target.getAttribute('data-tab-id')!);
+                return;
+            }
+            switchTab((btn as HTMLElement).getAttribute('data-tab-id')!);
+        });
+    });
+}
+
+function switchTab(id: string) {
+    // Save current state if switching from a container tab
+    if (activeTabId && activeTabId !== 'containers-home') {
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (currentTab) {
+            currentTab.prefix = blobSearchInput.value;
+            currentTab.delimiter = blobDelimiterInput.value;
+            currentTab.pageSize = pageSizeSelect.value;
+        }
+    }
+
+    activeTabId = id;
+    renderTabs();
+
+    if (id === 'containers-home') {
+        currentContainer = null;
+        containerView.style.display = 'block';
+        blobView.style.display = 'none';
+        updateContainerList();
+    } else {
+        const tab = tabs.find(t => t.id === id);
+        if (tab) {
+            currentContainer = tab.id;
+            blobSearchInput.value = tab.prefix;
+            blobDelimiterInput.value = tab.delimiter;
+            pageSizeSelect.value = tab.pageSize;
+
+            containerView.style.display = 'none';
+            blobView.style.display = 'block';
+
+            clearSelection();
+            updateBreadcrumbs();
+            updateBlobList(false, true);
+        } else if (tabs.length === 0) {
+            // Revert to containers view if no tabs left
+            activeTabId = 'containers-home';
+            currentContainer = null;
+            containerView.style.display = 'block';
+            blobView.style.display = 'none';
+            updateContainerList();
+        }
+    }
 
     // Sync treeview selection and manage roving tabindex
-    sidebarTreeview.querySelectorAll('.tree-item').forEach((item: any) => {
+    let hasTabFocus = false;
+    const treeItems = sidebarTreeview.querySelectorAll('.tree-item');
+    treeItems.forEach((item: any) => {
         item.classList.remove('active');
         item.tabIndex = -1;
-        if (item.getAttribute('data-container-name') === name) {
+        if (item.getAttribute('data-container-name') === currentContainer) {
             item.classList.add('active');
             item.tabIndex = 0;
+            hasTabFocus = true;
         }
     });
+
+    // If no active container, make the first item the tab entry point
+    if (!hasTabFocus && treeItems.length > 0) {
+        (treeItems[0] as HTMLElement).tabIndex = 0;
+    }
+}
+
+function closeTab(id: string) {
+    const index = tabs.findIndex(t => t.id === id);
+    if (index === -1) return;
+
+    tabs.splice(index, 1);
+
+    if (activeTabId === id) {
+        // Switch to containers home or previous tab
+        if (tabs.length > 0) {
+            switchTab(tabs[Math.max(0, index - 1)].id);
+        } else {
+            switchTab('containers-home');
+        }
+    } else {
+        renderTabs();
+    }
 }
 
 function updateBreadcrumbs() {
@@ -270,7 +379,7 @@ function navigateUp() {
     const delimiter = blobDelimiterInput.value || '/';
 
     if (!prefix || prefix === '') {
-        backToContainersBtn.click();
+        closeTab(activeTabId);
         return;
     }
 
@@ -319,11 +428,6 @@ function countLoadedItems() {
         // Update blob list stats in header too
         if (blobListStats) {
             blobListStats.textContent = `(${loadedItems} items loaded)`;
-        }
-    } else if (containerView.style.display !== 'none') {
-        const loadedContainers = containerList.querySelectorAll('.list-item:not(.empty)').length;
-        if (containerCountLabel) {
-            containerCountLabel.textContent = loadedContainers.toString();
         }
     }
 }
@@ -447,7 +551,7 @@ function closeModal() {
     }
 }
 
-async function updateBlobList(isLoadMore = false) {
+async function updateBlobList(isLoadMore = false, focusFirst = false) {
     if (!currentContainer) return;
     updateBreadcrumbs();
 
@@ -475,21 +579,51 @@ async function updateBlobList(isLoadMore = false) {
             li.setAttribute('data-blob-name', blob.name);
             li.setAttribute('data-blob-type', blob.type === 'directory' ? 'directory' : 'file');
             li.innerHTML = `<span>${blob.type === 'directory' ? '📁' : '📄'} ${blob.name}</span>`;
-            li.onclick = () => {
+            li.onclick = (e) => {
                 if (blob.type === 'directory') {
                     blobSearchInput.value = blob.name;
                     updateBlobList();
                 } else {
-                    toggleBlobSelection(blob.name, li);
+                    if (e.altKey) {
+                        showBlobProperties(blob.name);
+                    } else {
+                        toggleBlobSelection(blob.name, li);
+                    }
+                }
+            };
+            li.ondblclick = () => {
+                if (blob.type !== 'directory') {
+                    showBlobProperties(blob.name);
+                }
+            };
+            li.oncontextmenu = (e) => {
+                if (blob.type !== 'directory') {
+                    e.preventDefault();
+                    if (isImage(blob.name, blob.type)) {
+                        showBlobImage(blob.name, blob.type);
+                    } else {
+                        showBlobProperties(blob.name);
+                    }
                 }
             };
             li.onkeydown = (e) => {
+                const items = Array.from(blobList.querySelectorAll('.list-item:not(.empty)')) as HTMLElement[];
+                const index = items.indexOf(li);
+
                 if (e.key === 'Enter') {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (blob.type === 'directory') {
                         blobSearchInput.value = blob.name;
-                        updateBlobList();
+                        updateBlobList(false, true); // Keep focus when entering folder
                     } else {
-                        showBlobProperties(blob.name);
+                        if (e.altKey) {
+                            showBlobProperties(blob.name);
+                        } else if (isImage(blob.name, blob.type)) {
+                            showBlobImage(blob.name, blob.type);
+                        } else {
+                            showBlobProperties(blob.name);
+                        }
                     }
                 } else if (e.key === ' ') {
                     e.preventDefault();
@@ -498,7 +632,7 @@ async function updateBlobList(isLoadMore = false) {
                     }
                 } else if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    const next = li.nextElementSibling as HTMLElement;
+                    const next = items[index + 1];
                     if (next) {
                         li.tabIndex = -1;
                         next.tabIndex = 0;
@@ -506,20 +640,83 @@ async function updateBlobList(isLoadMore = false) {
                     }
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    const prev = li.previousElementSibling as HTMLElement;
+                    const prev = items[index - 1];
                     if (prev) {
                         li.tabIndex = -1;
                         prev.tabIndex = 0;
                         prev.focus();
+                    }
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    const first = items[0];
+                    if (first) {
+                        li.tabIndex = -1;
+                        first.tabIndex = 0;
+                        first.focus();
+                    }
+                } else if (e.key === 'End') {
+                    e.preventDefault();
+                    const last = items[items.length - 1];
+                    if (last) {
+                        li.tabIndex = -1;
+                        last.tabIndex = 0;
+                        last.focus();
+                    }
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const activeTreeItem = sidebarTreeview.querySelector('.tree-item.active') as HTMLElement;
+                    if (activeTreeItem) {
+                        activeTreeItem.focus();
                     }
                 }
             };
             blobList.appendChild(li);
         });
 
+        if (result.hasMore) {
+            const loadMoreLi = document.createElement('li');
+            loadMoreLi.className = 'list-item load-more-item';
+            loadMoreLi.tabIndex = -1;
+            loadMoreLi.innerHTML = `<span class="text-accent" style="width: 100%; text-align: center;">More items available (Enter/Click to load)</span>`;
+            loadMoreLi.onclick = () => updateBlobList(true);
+            loadMoreLi.onkeydown = (e) => {
+                const items = Array.from(blobList.querySelectorAll('.list-item:not(.empty)')) as HTMLElement[];
+                const index = items.indexOf(loadMoreLi);
+
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    updateBlobList(true);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prev = items[index - 1];
+                    if (prev) {
+                        loadMoreLi.tabIndex = -1;
+                        prev.tabIndex = 0;
+                        prev.focus();
+                    }
+                } else if (e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const activeTreeItem = sidebarTreeview.querySelector('.tree-item.active') as HTMLElement;
+                    if (activeTreeItem) {
+                        activeTreeItem.focus();
+                    }
+                }
+            };
+            blobList.appendChild(loadMoreLi);
+        }
+
         // Ensure first blob is the tab entry point
         const firstBlob = blobList.querySelector('.list-item:not(.empty)') as HTMLElement;
-        if (firstBlob) firstBlob.tabIndex = 0;
+        if (firstBlob) {
+            // ... wait, if we are loading more, we might want to keep the focus where it was.
+            // But for now, ensuring the roving index is consistent.
+            if (!isLoadMore) {
+                firstBlob.tabIndex = 0;
+                if (focusFirst) {
+                    firstBlob.focus();
+                }
+            }
+        }
         currentContinuationToken = result.continuationToken;
         countLoadedItems();
     }
@@ -652,6 +849,25 @@ menuQuit.addEventListener('click', () => {
     api.quit();
 });
 
+refreshBlobsBtn.addEventListener('click', () => updateBlobList());
+pageSizeSelect.addEventListener('change', () => updateBlobList());
+searchBlobsBtn.addEventListener('click', () => updateBlobList());
+blobSearchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        updateBlobList();
+    }
+});
+
+uploadBlobBtn.addEventListener('click', async () => {
+    if (!currentContainer) return;
+    const result = await api.uploadBlob(currentContainer);
+    if (result.success) {
+        updateBlobList();
+    } else if (result.error !== 'Canceled') {
+        alert('Upload failed: ' + result.error);
+    }
+});
+
 menuAccount.addEventListener('click', () => {
     connectSection.style.display = 'block';
     explorerSection.style.display = 'none';
@@ -687,12 +903,13 @@ connectBtn.addEventListener('click', async () => {
         connectSection.style.display = 'none';
         explorerSection.style.display = 'block';
         explorerNav.style.display = 'flex';
-        containerView.style.display = 'none'; // Hide container grid
-        blobView.style.display = 'block';    // Show empty blob view
-        navConnectBtn.tabIndex = -1;         // Skip in tab order when connected
+
+        tabs = [];
+        switchTab('containers-home');
+
+        navConnectBtn.tabIndex = -1;
         if (accountNameLabel) accountNameLabel.textContent = result.accountName;
         sidebarAccountNameLabel.textContent = result.accountName;
-        updateContainerList();
     }
 });
 
@@ -701,14 +918,24 @@ disconnectBtn.addEventListener('click', async () => {
     connectSection.style.display = 'block';
     explorerSection.style.display = 'none';
     explorerNav.style.display = 'none';
-    navConnectBtn.tabIndex = 0;          // Restore tab order
+    navConnectBtn.tabIndex = 0;
     sidebarAccountNameLabel.textContent = 'Not Connected';
     connectionStringInput.value = '';
+    tabs = [];
+    activeTabId = 'containers-home';
     connectionStringInput.focus();
 });
 
 window.addEventListener('keydown', (e) => {
     const isMenuOpen = hamburgerMenu.style.display === 'block';
+
+    if (e.key === 'Backspace' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        if (blobView.style.display === 'block') {
+            e.preventDefault();
+            navigateUp();
+            return;
+        }
+    }
 
     if (e.key === 'Escape') {
         if (modalOverlay.style.display === 'flex') {
@@ -794,6 +1021,29 @@ window.addEventListener('keydown', (e) => {
     if (e.key === 'F1' || ((e.metaKey || e.ctrlKey) && (e.key === '?' || e.code === 'Slash' && e.shiftKey))) {
         e.preventDefault();
         openManual();
+    }
+
+    // Tab shortcuts
+    if (e.metaKey || e.ctrlKey) {
+        if (e.key >= '1' && e.key <= '9') {
+            e.preventDefault();
+            if (e.key === '9') {
+                // Switch to last tab
+                if (tabs.length > 0) {
+                    switchTab(tabs[tabs.length - 1].id);
+                } else {
+                    switchTab('containers-home');
+                }
+            } else {
+                const index = parseInt(e.key) - 1;
+                if (index < tabs.length) {
+                    switchTab(tabs[index].id);
+                }
+            }
+        } else if (e.key.toLowerCase() === 'w' && activeTabId !== 'containers-home') {
+            e.preventDefault();
+            closeTab(activeTabId);
+        }
     }
 });
 

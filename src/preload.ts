@@ -21,5 +21,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openPath: (path: string) => ipcRenderer.invoke('utils:openPath', path),
     readManual: () => ipcRenderer.invoke('utils:readManual'),
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    uploadBlob: (containerName: string) => ipcRenderer.invoke('azure:uploadBlob', containerName),
     quit: () => ipcRenderer.send('app:quit')
 });

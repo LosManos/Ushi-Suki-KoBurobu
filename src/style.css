@@ -1219,3 +1219,76 @@ input[type="password"]:focus {
     color: var(--accent);
     font-weight: 600;
 }
+
+/* Tab Bar Styling */
+.tab-bar {
+    display: flex;
+    gap: 2px;
+    background: rgba(15, 23, 42, 0.4);
+    padding: 8px 12px 0 12px;
+    border-bottom: 1px solid var(--glass-border);
+    margin-bottom: 1.5rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+}
+
+.tab-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.tab-item {
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: none;
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 200px;
+}
+
+.tab-item span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+}
+
+.tab-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.tab-item.active {
+    background: var(--glass-bg);
+    color: var(--accent);
+    border-color: var(--glass-border);
+    font-weight: 600;
+}
+
+.tab-close {
+    font-size: 0.8rem;
+    opacity: 0.5;
+    transition: all 0.2s;
+    padding: 2px;
+    border-radius: 4px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tab-close:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}

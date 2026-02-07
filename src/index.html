@@ -78,25 +78,18 @@
                 </div>
             </section>
 
-            <section id="explorer-section" class="dashboard" style="display: none;">
-                <div id="container-view">
-                    <div class="container-list-wrapper">
-                        <div class="list-header">
-                            <h3>Containers</h3>
-                            <button id="refresh-containers-btn" class="btn btn-secondary btn-sm"
-                                data-tooltip="Refresh (R)" title="Refresh (R)">Refresh</button>
-                        </div>
-                        <ul id="container-list" class="data-list">
-                            <!-- Containers will be injected here -->
-                            <li class="list-item empty">No containers found.</li>
-                        </ul>
+            <section id="explorer-section" class="dashboard" style="display: none; padding-top: 0;">
+                <div id="tab-bar" class="tab-bar">
+                </div>
+                <div id="container-view" class="placeholder-view">
+                    <div class="welcome-card">
+                        <h3>Explorer</h3>
+                        <p>Select a container from the sidebar to start exploring your blobs.</p>
                     </div>
                 </div>
 
                 <div id="blob-view" style="display: none;">
                     <div class="breadcrumb">
-                        <button id="back-to-containers" class="btn btn-link" data-tooltip="Back (Backspace)"
-                            title="Back (Backspace)">← Back</button>
                         <h3 id="current-container-name">Container Name</h3>
                     </div>
                     <div class="container-list-wrapper">
