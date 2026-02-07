@@ -578,7 +578,18 @@ async function updateBlobList(isLoadMore = false, focusFirst = false) {
             li.tabIndex = -1; // Roving tabindex
             li.setAttribute('data-blob-name', blob.name);
             li.setAttribute('data-blob-type', blob.type === 'directory' ? 'directory' : 'file');
-            li.innerHTML = `<span>${blob.type === 'directory' ? '📁' : '📄'} ${blob.name}</span>`;
+            li.innerHTML = `
+                <div class="blob-item-main">
+                    <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
+                    <span class="blob-name">${blob.name}</span>
+                </div>
+                <div class="blob-meta">
+                    ${blob.type === 'directory' ? '' : `
+                        <span class="blob-size">${formatBytes(blob.size)}</span>
+                        <span class="blob-date">${formatDateTime(blob.lastModified)}</span>
+                    `}
+                </div>
+            `;
             li.onclick = (e) => {
                 if (blob.type === 'directory') {
                     blobSearchInput.value = blob.name;

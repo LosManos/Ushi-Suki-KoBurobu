@@ -527,6 +527,41 @@ input[type="password"]:focus {
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
 }
 
+.blob-item-main {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.blob-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.blob-meta {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+}
+
+.blob-size {
+    width: 80px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.blob-date {
+    width: 140px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
 .list-item.selected {
     background: rgba(56, 189, 248, 0.15);
     border-color: rgba(56, 189, 248, 0.5);
