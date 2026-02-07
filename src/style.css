@@ -161,10 +161,68 @@ nav {
 }
 
 .nav-item.active {
-    background-color: var(--accent);
-    color: var(--bg-dark);
+    background-color: var(--glass-bg);
+    color: var(--accent);
     font-weight: 600;
     opacity: 1;
+}
+
+/* Treeview Styles */
+.sidebar-section-title {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+    margin: 1.5rem 0 0.5rem 12px;
+    opacity: 0.6;
+}
+
+.treeview {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.tree-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    font-size: 0.85rem;
+    margin: 2px 4px;
+}
+
+.tree-item:hover,
+.tree-item:focus {
+    background: var(--glass-bg);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.tree-item.active {
+    background: var(--glass-bg);
+    color: var(--accent);
+    font-weight: 600;
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.tree-item-icon {
+    font-size: 0.9rem;
+    width: 16px;
+    text-align: center;
+}
+
+.tree-item-text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Main Content Styling */

@@ -32,7 +32,12 @@
             </div>
             <nav id="sidebar-nav">
                 <button class="nav-item active" data-section="connect-section">Connect</button>
-                <button class="nav-item" data-section="explorer-section" style="display: none;">Explorer</button>
+                <div id="explorer-nav" style="display: none; flex-direction: column; flex: 1; overflow: hidden;">
+                    <div class="sidebar-section-title" title="Focus Sidebar Treeview (Cmd+E)">Explorer</div>
+                    <ul id="sidebar-treeview" class="treeview">
+                        <!-- Containers will be loaded here -->
+                    </ul>
+                </div>
             </nav>
         </aside>
         <main class="content">
@@ -133,7 +138,7 @@
                         </div>
                         <ul id="blob-list" class="data-list">
                             <!-- Blobs will be injected here -->
-                            <li class="list-item empty">No blobs found in this container.</li>
+                            <li class="list-item empty">Select a container from the sidebar to view its blobs.</li>
                         </ul>
                     </div>
 

@@ -25,11 +25,11 @@ The following shortcuts are available to speed up your workflow:
 | `Enter` | Open blob as image preview |
 | `Right-click` | Open blob as image preview |
 | `Del` / `Alt + Backspace` | Delete all marked/selected blobs (requires confirmation) |
-| `↑` / `↓` | Navigate through container or blob lists |
+| `↑` / `↓` | Navigate through treeview, container or blob lists |
 | `Backspace` | Go back one level or to Container List |
 | `R` | Refresh current list (Containers or Blobs) |
 | `P` | Focus Page Size dropdown (in Blob View) |
-| `Cmd + E` / `Ctrl + E` | Switch to Containers View |
+| `Cmd + E` / `Ctrl + E` | Focus Sidebar Treeview |
 | `Cmd + ,` / `Ctrl + ,` | Switch to Settings View |
 | `Cmd + F` / `Ctrl + F` | Search/Filter Blobs (in Blob View) |
 | `Cmd + I` / `Ctrl + I` | Blob Counter: Count all in folder (server) or loaded items (client) |
@@ -39,6 +39,6 @@ The following shortcuts are available to speed up your workflow:
 ## Navigation
 
 - **Dashboard**: The main screen for connecting and seeing account stats.
-- **Containers**: List of all available containers in the account.
+- **Sidebar Treeview**: Quickly jump between containers using the list in the sidebar.
 - **Hierarchical Navigation**: Use breadcrumbs at the top of the blob list to quickly jump back to parent folders.
 - **Settings**: Manage application preferences, such as toggling between Local and UTC time display.

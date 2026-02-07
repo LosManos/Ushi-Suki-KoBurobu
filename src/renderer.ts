@@ -23,6 +23,10 @@ const menuQuit = document.getElementById('menu-quit') as HTMLButtonElement;
 
 const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
 
+const explorerNav = document.getElementById('explorer-nav') as HTMLElement;
+const sidebarTreeview = document.getElementById('sidebar-treeview') as HTMLUListElement;
+const navConnectBtn = document.querySelector('.nav-item[data-section="connect-section"]') as HTMLButtonElement;
+
 const containerList = document.getElementById('container-list') as HTMLUListElement;
 const blobList = document.getElementById('blob-list') as HTMLUListElement;
 const containerCountLabel = document.getElementById('container-count') as HTMLElement;
@@ -106,6 +110,7 @@ function formatDateTime(dateStr: string | Date): string {
 
 async function updateContainerList() {
     containerList.innerHTML = '<li class="list-item empty">Loading containers...</li>';
+    sidebarTreeview.innerHTML = '';
 
     const result = await api.listContainers();
     if (result.success) {
@@ -115,6 +120,7 @@ async function updateContainerList() {
         } else {
             containerList.innerHTML = '';
             result.containers.forEach((container: any) => {
+                // Main view item
                 const li = document.createElement('li');
                 li.className = 'list-item';
                 li.tabIndex = 0;
@@ -139,9 +145,55 @@ async function updateContainerList() {
                     openContainer(container.name);
                 };
                 containerList.appendChild(li);
+
+                // Sidebar tree item
+                const treeLi = document.createElement('li');
+                treeLi.className = 'tree-item';
+                treeLi.tabIndex = -1; // Roving tabindex
+                treeLi.setAttribute('data-container-name', container.name);
+                treeLi.innerHTML = `
+                    <span class="tree-item-icon">📁</span>
+                    <span class="tree-item-text">${container.name}</span>
+                `;
+                treeLi.onclick = () => openContainer(container.name);
+                treeLi.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        openContainer(container.name);
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        const next = treeLi.nextElementSibling as HTMLElement;
+                        if (next) {
+                            treeLi.tabIndex = -1;
+                            next.tabIndex = 0;
+                            next.focus();
+                        }
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        const prev = treeLi.previousElementSibling as HTMLElement;
+                        if (prev) {
+                            treeLi.tabIndex = -1;
+                            prev.tabIndex = 0;
+                            prev.focus();
+                        }
+                    } else if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        blobSearchInput.focus();
+                    } else if (e.key === 'Tab' && !e.shiftKey) {
+                        const firstBlob = blobList.querySelector('.list-item:not(.empty)') as HTMLElement;
+                        if (firstBlob) {
+                            e.preventDefault();
+                            firstBlob.focus();
+                        }
+                    }
+                };
+                sidebarTreeview.appendChild(treeLi);
             });
-            const firstItem = containerList.querySelector('.list-item') as HTMLElement;
-            if (firstItem) firstItem.focus();
+            // Focus first container immediately after connection
+            const firstTreeItem = sidebarTreeview.querySelector('.tree-item') as HTMLElement;
+            if (firstTreeItem) {
+                firstTreeItem.tabIndex = 0;
+                firstTreeItem.focus();
+            }
         }
     } else {
         containerList.innerHTML = `<li class="list-item empty text-danger">Error: ${result.error}</li>`;
@@ -156,6 +208,16 @@ async function openContainer(name: string) {
     containerView.style.display = 'none';
     blobView.style.display = 'block';
     updateBlobList();
+
+    // Sync treeview selection and manage roving tabindex
+    sidebarTreeview.querySelectorAll('.tree-item').forEach((item: any) => {
+        item.classList.remove('active');
+        item.tabIndex = -1;
+        if (item.getAttribute('data-container-name') === name) {
+            item.classList.add('active');
+            item.tabIndex = 0;
+        }
+    });
 }
 
 function updateBreadcrumbs() {
@@ -393,10 +455,13 @@ async function updateBlobList(isLoadMore = false) {
 
     if (result.success) {
         if (!isLoadMore) blobList.innerHTML = '';
+        if (result.blobs.length === 0 && !isLoadMore) {
+            blobList.innerHTML = '<li class="list-item empty">No blobs found in this container.</li>';
+        }
         result.blobs.forEach((blob: any) => {
             const li = document.createElement('li');
             li.className = 'list-item';
-            li.tabIndex = 0;
+            li.tabIndex = -1; // Roving tabindex
             li.setAttribute('data-blob-name', blob.name);
             li.setAttribute('data-blob-type', blob.type === 'directory' ? 'directory' : 'file');
             li.innerHTML = `<span>${blob.type === 'directory' ? '📁' : '📄'} ${blob.name}</span>`;
@@ -408,8 +473,43 @@ async function updateBlobList(isLoadMore = false) {
                     toggleBlobSelection(blob.name, li);
                 }
             };
+            li.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    if (blob.type === 'directory') {
+                        blobSearchInput.value = blob.name;
+                        updateBlobList();
+                    } else {
+                        showBlobProperties(blob.name);
+                    }
+                } else if (e.key === ' ') {
+                    e.preventDefault();
+                    if (blob.type !== 'directory') {
+                        toggleBlobSelection(blob.name, li);
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const next = li.nextElementSibling as HTMLElement;
+                    if (next) {
+                        li.tabIndex = -1;
+                        next.tabIndex = 0;
+                        next.focus();
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prev = li.previousElementSibling as HTMLElement;
+                    if (prev) {
+                        li.tabIndex = -1;
+                        prev.tabIndex = 0;
+                        prev.focus();
+                    }
+                }
+            };
             blobList.appendChild(li);
         });
+
+        // Ensure first blob is the tab entry point
+        const firstBlob = blobList.querySelector('.list-item:not(.empty)') as HTMLElement;
+        if (firstBlob) firstBlob.tabIndex = 0;
         currentContinuationToken = result.continuationToken;
     }
 }
@@ -519,6 +619,14 @@ menuQuit.addEventListener('click', () => {
 menuAccount.addEventListener('click', () => {
     connectSection.style.display = 'block';
     explorerSection.style.display = 'none';
+    explorerNav.style.display = 'none';
+    connectionStringInput.focus();
+});
+
+navConnectBtn.addEventListener('click', () => {
+    connectSection.style.display = 'block';
+    explorerSection.style.display = 'none';
+    explorerNav.style.display = 'none';
     connectionStringInput.focus();
 });
 
@@ -542,6 +650,10 @@ connectBtn.addEventListener('click', async () => {
     if (result.success) {
         connectSection.style.display = 'none';
         explorerSection.style.display = 'block';
+        explorerNav.style.display = 'flex';
+        containerView.style.display = 'none'; // Hide container grid
+        blobView.style.display = 'block';    // Show empty blob view
+        navConnectBtn.tabIndex = -1;         // Skip in tab order when connected
         accountNameLabel.textContent = result.accountName;
         sidebarAccountNameLabel.textContent = result.accountName;
         updateContainerList();
@@ -552,6 +664,8 @@ disconnectBtn.addEventListener('click', async () => {
     await api.disconnect();
     connectSection.style.display = 'block';
     explorerSection.style.display = 'none';
+    explorerNav.style.display = 'none';
+    navConnectBtn.tabIndex = 0;          // Restore tab order
     sidebarAccountNameLabel.textContent = 'Not Connected';
     connectionStringInput.value = '';
     connectionStringInput.focus();
@@ -603,6 +717,26 @@ window.addEventListener('keydown', (e) => {
             if (firstItem) firstItem.focus();
         } else {
             sidebarHamburger.focus();
+        }
+    }
+
+    if (e.key.toLowerCase() === 'r' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        if (blobView.style.display === 'block') {
+            updateBlobList();
+        } else {
+            updateContainerList();
+        }
+    }
+
+    // Focus sidebar treeview (Cmd+E)
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        const activeTreeItem = sidebarTreeview.querySelector('.tree-item.active') as HTMLElement;
+        const firstTreeItem = sidebarTreeview.querySelector('.tree-item') as HTMLElement;
+        if (activeTreeItem) {
+            activeTreeItem.focus();
+        } else if (firstTreeItem) {
+            firstTreeItem.focus();
         }
     }
 
