@@ -17,6 +17,7 @@ The following shortcuts are available to speed up your workflow:
 | --- | --- |
 | `Enter` | Connect Account (when focused on Connection String) |
 | `Cmd + D` / `Ctrl + D` | Disconnect from Storage Account |
+| `Cmd + Q` / `Ctrl + Q` | Quit Application |
 | `Cmd + A` / `Ctrl + A` | Select all blobs in current view |
 | `Space` | Toggle mark/selection of focused blob |
 | `Click` | Mark/selection of blob |

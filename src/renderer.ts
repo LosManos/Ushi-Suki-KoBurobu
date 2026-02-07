@@ -19,6 +19,7 @@ const hamburgerMenu = document.getElementById('hamburger-menu') as HTMLElement;
 const menuSettings = document.getElementById('menu-settings') as HTMLButtonElement;
 const menuAbout = document.getElementById('menu-about') as HTMLButtonElement;
 const menuAccount = document.getElementById('menu-account') as HTMLButtonElement;
+const menuQuit = document.getElementById('menu-quit') as HTMLButtonElement;
 
 const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
 
@@ -511,6 +512,9 @@ sidebarHamburger.addEventListener('click', (e) => {
 document.addEventListener('click', () => hamburgerMenu.style.display = 'none');
 menuSettings.addEventListener('click', openSettings);
 menuAbout.addEventListener('click', openSettings);
+menuQuit.addEventListener('click', () => {
+    api.quit();
+});
 
 menuAccount.addEventListener('click', () => {
     connectSection.style.display = 'block';
