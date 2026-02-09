@@ -1118,6 +1118,16 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
+    // Focus Search Prefix (Cmd+F)
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f') {
+        if (modalVisible) return;
+        if (blobView.style.display === 'block') {
+            e.preventDefault();
+            blobSearchInput.focus();
+            blobSearchInput.select();
+        }
+    }
+
     if ((e.metaKey || e.ctrlKey) && (e.key === ',' || e.code === 'Comma')) {
         if (modalVisible) return;
         e.preventDefault();
