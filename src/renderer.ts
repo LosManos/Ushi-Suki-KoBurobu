@@ -1098,10 +1098,10 @@ menuQuit.addEventListener('click', () => {
 
 refreshBlobsBtn.addEventListener('click', () => updateBlobList());
 pageSizeSelect.addEventListener('change', () => updateBlobList());
-searchBlobsBtn.addEventListener('click', () => updateBlobList());
+searchBlobsBtn.addEventListener('click', () => updateBlobList(false, true));
 blobSearchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
-        updateBlobList();
+        updateBlobList(false, true);
     }
 });
 
