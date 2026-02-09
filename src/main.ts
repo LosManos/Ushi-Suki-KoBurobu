@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, safeStorage } from 'electron';
 import * as path from 'path';
+import * as fs from 'fs';
 import { BlobServiceClient } from '@azure/storage-blob';
 
 let blobServiceClient: BlobServiceClient | null = null;
@@ -279,6 +280,110 @@ app.whenReady().then(() => {
             const html = marked.parse(content);
             return { success: true, content: html };
         } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('utils:openConnectionsFile', async () => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const connectionsPath = path.join(userDataPath, 'connections.json');
+            await shell.openPath(connectionsPath);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('storage:saveConnection', async (_event, name: string, connectionString: string) => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const connectionsPath = path.join(userDataPath, 'connections.json');
+
+            let connections = [];
+            if (fs.existsSync(connectionsPath)) {
+                const content = fs.readFileSync(connectionsPath, 'utf-8').trim();
+                if (content) {
+                    try {
+                        connections = JSON.parse(content);
+                    } catch (e) {
+                        console.warn('Failed to parse connections file, starting fresh');
+                    }
+                }
+            }
+
+            if (!safeStorage.isEncryptionAvailable()) {
+                throw new Error('Safe storage is not available on this system.');
+            }
+
+            const encrypted = safeStorage.encryptString(connectionString);
+            const connection = {
+                id: Date.now().toString(),
+                name: name,
+                connectionString: encrypted.toString('base64')
+            };
+
+            connections.push(connection);
+            fs.writeFileSync(connectionsPath, JSON.stringify(connections, null, 2));
+            return { success: true };
+        } catch (error: any) {
+            console.error('Save Connection Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('storage:getConnections', async () => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const connectionsPath = path.join(userDataPath, 'connections.json');
+
+            if (!fs.existsSync(connectionsPath)) {
+                return { success: true, connections: [] };
+            }
+
+            if (!safeStorage.isEncryptionAvailable()) {
+                return { success: false, error: 'Safe storage is not available.' };
+            }
+
+            const content = fs.readFileSync(connectionsPath, 'utf-8').trim();
+            if (!content) return { success: true, connections: [] };
+
+            let connections = [];
+            try {
+                connections = JSON.parse(content);
+            } catch (e) {
+                return { success: false, error: 'Failed to parse connections file' };
+            }
+
+            const decryptedConnections = connections.map((conn: any) => {
+                try {
+                    const decrypted = safeStorage.decryptString(Buffer.from(conn.connectionString, 'base64'));
+                    return { id: conn.id, name: conn.name, connectionString: decrypted.toString() };
+                } catch (e) {
+                    return { id: conn.id, name: conn.name, connectionString: '', error: 'Decryption failed' };
+                }
+            });
+
+            return { success: true, connections: decryptedConnections };
+        } catch (error: any) {
+            console.error('Get Connections Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('storage:deleteConnection', async (_event, id: string) => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const connectionsPath = path.join(userDataPath, 'connections.json');
+
+            if (!fs.existsSync(connectionsPath)) return { success: true };
+
+            let connections = JSON.parse(fs.readFileSync(connectionsPath, 'utf-8'));
+            connections = connections.filter((conn: any) => conn.id !== id);
+            fs.writeFileSync(connectionsPath, JSON.stringify(connections, null, 2));
+            return { success: true };
+        } catch (error: any) {
+            console.error('Delete Connection Error:', error);
             return { success: false, error: error.message };
         }
     });

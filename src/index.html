@@ -24,6 +24,7 @@
                     <button class="dropdown-item" id="menu-settings">Settings... <span
                             class="shortcut">Cmd+,</span></button>
                     <button class="dropdown-item" id="menu-manual">Manual... <span class="shortcut">F1</span></button>
+                    <button class="dropdown-item" id="menu-connections">Connections File...</button>
                     <div class="dropdown-divider"></div>
                     <button class="dropdown-item" id="menu-about">About...</button>
                     <div class="dropdown-divider"></div>
@@ -67,13 +68,45 @@
                 <div class="welcome-card">
                     <h3>Connect to Azure</h3>
                     <p>Enter your Azure Storage Connection String to begin exploring your blobs.</p>
+
+                    <div id="saved-connections-area" style="display: none; margin-bottom: 1.5rem;">
+                        <label class="settings-label" style="margin-bottom: 0.5rem; display: block;">Saved
+                            Connections</label>
+                        <div class="connections-dropdown" id="connections-dropdown">
+                            <div class="connections-toggle" id="connections-toggle" tabindex="0" role="combobox"
+                                aria-expanded="false" aria-haspopup="listbox">
+                                <span>Select a saved connection...</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <ul class="connections-menu" id="connections-menu" role="listbox" style="display: none;">
+                                <!-- Saved connections will be loaded here -->
+                            </ul>
+                        </div>
+                    </div>
+
                     <div class="input-group">
+                        <label class="settings-label" style="margin-bottom: -0.5rem;">Connection String</label>
                         <input type="password" id="connection-string" autofocus
                             placeholder="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net"
                             data-tooltip="Press Enter to connect" title="Press Enter to connect">
-                        <button id="connect-btn" class="btn btn-primary" data-tooltip="Connect Account (Cmd+Enter)"
-                            title="Connect Account (Cmd+Enter)">Connect
-                            Account</button>
+
+                        <div class="save-connection-group">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="save-connection-check">
+                                <span class="checkmark"></span>
+                                Save this connection
+                            </label>
+                            <input type="text" id="connection-name" class="form-control"
+                                placeholder="Connection Name (e.g. Production)"
+                                style="display: none; background: var(--bg-dark); border: 1px solid var(--glass-border); border-radius: 8px; width: 100%;">
+                        </div>
+
+                        <div class="action-bar">
+                            <button id="connect-btn" class="btn btn-primary" data-tooltip="Connect Account (Cmd+Enter)"
+                                title="Connect Account (Cmd+Enter)">Connect Account</button>
+                            <button id="connect-cancel-btn" class="btn btn-secondary"
+                                style="display: none;">Cancel</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -114,6 +147,9 @@
                                     <option value="1000">1000</option>
                                 </select>
                                 <button id="upload-blob-btn" class="btn btn-primary btn-sm">Upload</button>
+                                <button id="delete-blobs-btn" class="btn btn-secondary btn-sm" style="display: none;"
+                                    data-tooltip="Delete (Del / Alt+Backspace)"
+                                    title="Delete (Del / Alt+Backspace)">Delete</button>
                                 <button id="refresh-blobs-btn" class="btn btn-secondary btn-sm"
                                     data-tooltip="Refresh (R)" title="Refresh (R)">Refresh</button>
                             </div>

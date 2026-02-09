@@ -5,7 +5,14 @@ KoBurobu is a streamlined Azure Blob Storage Explorer.
 ## Getting Started
 
 1. **Connect to Azure**: Enter your Azure Storage Connection String in the input field on the Dashboard.
-2. **Explore Containers**: Once connected, you will see a list of your containers. Click on a container to view its blobs.
+2. **Saved Connections**: You can save your connection strings for future use. 
+   - Check the **"Save this connection"** box and provide a name (e.g., "Production", "Testing").
+   - Previously saved connections will appear in a list above the input field. 
+   - Click a saved connection to quickly fill the connection string.
+   - Use the **"×"** button next to a saved connection to remove it.
+   - Connection strings are stored securely using your operating system's safe storage.
+   - You can inspect the saved connections file via **Menu > Connections File...**.
+3. **Explore Containers**: Once connected, you will see a list of your containers. Click on a container to view its blobs.
 3. **Manage Blobs**: You can upload new blobs or refresh the list to see the latest changes.
 4. **Pagination**: Large containers are loaded in pages. Use the dropdown next to the Refresh button to set the page size (10, 100, or 1000 items). If more items are available, a "More items available" indicator will appear at the bottom—click it or press Enter to fetch the next page. Only the first page is fetched initially for performance.
 

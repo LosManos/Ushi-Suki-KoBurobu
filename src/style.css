@@ -1327,3 +1327,200 @@ input[type="password"]:focus {
     background: rgba(239, 68, 68, 0.2);
     color: #ef4444;
 }
+
+/* Saved Connections Dropdown */
+.connections-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.connections-toggle {
+    background: var(--bg-dark);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: all 0.2s;
+}
+
+.connections-toggle:hover,
+.connections-toggle:focus {
+    border-color: var(--accent);
+    outline: none;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.dropdown-arrow {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    transition: transform 0.2s;
+}
+
+.connections-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.connections-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--sidebar-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    list-style: none;
+    padding: 4px;
+    margin: 0;
+    z-index: 1000;
+    max-height: 250px;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    animation: dropdownIn 0.2s ease-out;
+}
+
+.connection-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: var(--text-primary);
+}
+
+.connection-option:hover,
+.connection-option:focus {
+    background: var(--glass-bg);
+    outline: none;
+}
+
+.connection-option.selected {
+    background: rgba(56, 189, 248, 0.1);
+    color: var(--accent);
+}
+
+.option-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    pointer-events: none;
+}
+
+.option-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.option-account {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.delete-option-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+    line-height: 1;
+    z-index: 2;
+}
+
+.delete-option-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+@keyframes dropdownIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Custom Checkbox */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding-left: 30px;
+    margin-bottom: 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 20px;
+    background-color: var(--bg-dark);
+    border: 1px solid var(--glass-border);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.checkbox-container:hover input~.checkmark {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-container input:checked~.checkmark {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked~.checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkmark:after {
+    left: 7px;
+    top: 3px;
+    width: 5px;
+    height: 10px;
+    border: solid var(--bg-dark);
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.save-connection-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin: 0.5rem 0;
+}

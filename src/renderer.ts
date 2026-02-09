@@ -20,7 +20,16 @@ const menuAbout = document.getElementById('menu-about') as HTMLButtonElement;
 const menuAccount = document.getElementById('menu-account') as HTMLButtonElement;
 const menuQuit = document.getElementById('menu-quit') as HTMLButtonElement;
 const menuManual = document.getElementById('menu-manual') as HTMLButtonElement;
+const menuConnections = document.getElementById('menu-connections') as HTMLButtonElement;
 const uploadBlobBtn = document.getElementById('upload-blob-btn') as HTMLButtonElement;
+const deleteBlobsBtn = document.getElementById('delete-blobs-btn') as HTMLButtonElement;
+const connectCancelBtn = document.getElementById('connect-cancel-btn') as HTMLButtonElement;
+const saveConnectionCheck = document.getElementById('save-connection-check') as HTMLInputElement;
+const connectionNameInput = document.getElementById('connection-name') as HTMLInputElement;
+const connectionsDropdown = document.getElementById('connections-dropdown') as HTMLElement;
+const connectionsToggle = document.getElementById('connections-toggle') as HTMLElement;
+const connectionsMenu = document.getElementById('connections-menu') as HTMLUListElement;
+const savedConnectionsArea = document.getElementById('saved-connections-area') as HTMLElement;
 
 const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
 
@@ -58,6 +67,8 @@ let lastActiveElement: HTMLElement | null = null;
 let selectedBlobs: Set<string> = new Set();
 let tabs: any[] = [];
 let activeTabId: string = 'containers-home';
+let isConnected = false;
+let savedConnections: any[] = [];
 
 function isModalOpen(): boolean {
     return modalOverlay.style.display === 'flex';
@@ -71,6 +82,16 @@ function toggleBlobSelection(blobName: string, element: HTMLElement) {
         selectedBlobs.add(blobName);
         element.classList.add('selected');
     }
+    updateDeleteButtonVisibility();
+}
+
+function updateDeleteButtonVisibility() {
+    if (selectedBlobs.size > 0) {
+        deleteBlobsBtn.style.display = 'inline-block';
+        deleteBlobsBtn.textContent = `Delete (${selectedBlobs.size})`;
+    } else {
+        deleteBlobsBtn.style.display = 'none';
+    }
 }
 
 function selectAllBlobs() {
@@ -82,12 +103,14 @@ function selectAllBlobs() {
             item.classList.add('selected');
         }
     });
+    updateDeleteButtonVisibility();
 }
 
 function clearSelection() {
     selectedBlobs.clear();
     const items = blobList.querySelectorAll('.list-item.selected');
     items.forEach(item => item.classList.remove('selected'));
+    updateDeleteButtonVisibility();
 }
 
 function formatBytes(bytes: number, decimals = 2) {
@@ -112,6 +135,174 @@ function formatDateTime(dateStr: string | Date): string {
     const s = pad(useUTC ? date.getUTCSeconds() : date.getSeconds());
 
     return `${y}-${m}-${d} ${h}:${min}:${s}`;
+}
+
+async function loadSavedConnections() {
+    const result = await api.getConnections();
+    if (result.success) {
+        savedConnections = result.connections;
+        renderSavedConnections();
+
+        // Auto-select first connection if available and nothing is currently entered
+        if (savedConnections.length > 0 && !connectionStringInput.value.trim()) {
+            selectConnection(savedConnections[0]);
+        }
+    }
+}
+
+function renderSavedConnections() {
+    if (savedConnections.length === 0) {
+        savedConnectionsArea.style.display = 'none';
+        return;
+    }
+
+    savedConnectionsArea.style.display = 'block';
+    connectionsMenu.innerHTML = '';
+
+    // Reset toggle text
+    const toggleSpan = connectionsToggle.querySelector('span');
+    if (toggleSpan) toggleSpan.textContent = 'Select a saved connection...';
+
+    savedConnections.forEach(conn => {
+        const li = document.createElement('li');
+        li.className = 'connection-option';
+        li.setAttribute('role', 'option');
+        li.setAttribute('tabindex', '-1');
+        li.setAttribute('data-id', conn.id);
+
+        const info = document.createElement('div');
+        info.className = 'option-info';
+
+        const name = document.createElement('div');
+        name.className = 'option-name';
+        name.textContent = conn.name;
+
+        const account = document.createElement('div');
+        account.className = 'option-account';
+        const accountMatch = conn.connectionString.match(/AccountName=([^;]+)/);
+        account.textContent = accountMatch ? accountMatch[1] : 'Azure Storage';
+
+        info.appendChild(name);
+        info.appendChild(account);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'delete-option-btn';
+        deleteBtn.innerHTML = '×';
+        deleteBtn.title = 'Remove connection';
+        deleteBtn.onclick = async (e) => {
+            e.stopPropagation();
+            if (confirm(`Remove saved connection "${conn.name}"?`)) {
+                const res = await api.deleteConnection(conn.id);
+                if (res.success) {
+                    loadSavedConnections();
+                }
+            }
+        };
+
+        li.appendChild(info);
+        li.appendChild(deleteBtn);
+
+        li.onclick = () => selectConnection(conn);
+
+        li.onkeydown = (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                selectConnection(conn);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                const next = li.nextElementSibling as HTMLElement;
+                if (next) next.focus();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                const prev = li.previousElementSibling as HTMLElement;
+                if (prev) {
+                    prev.focus();
+                } else {
+                    connectionsToggle.focus();
+                }
+            } else if (e.key === 'Escape') {
+                closeConnectionsDropdown();
+                connectionsToggle.focus();
+            }
+        };
+
+        connectionsMenu.appendChild(li);
+    });
+}
+
+function selectConnection(conn: any) {
+    connectionStringInput.value = conn.connectionString;
+    const toggleSpan = connectionsToggle.querySelector('span');
+    if (toggleSpan) toggleSpan.textContent = conn.name;
+
+    saveConnectionCheck.checked = false;
+    connectionNameInput.style.display = 'none';
+
+    closeConnectionsDropdown();
+    connectBtn.focus();
+}
+
+function toggleConnectionsDropdown() {
+    const isOpen = connectionsDropdown.classList.contains('open');
+    if (isOpen) {
+        closeConnectionsDropdown();
+    } else {
+        openConnectionsDropdown();
+    }
+}
+
+function openConnectionsDropdown() {
+    connectionsDropdown.classList.add('open');
+    connectionsMenu.style.display = 'block';
+    connectionsToggle.setAttribute('aria-expanded', 'true');
+
+    // Focus first option
+    const firstOption = connectionsMenu.querySelector('.connection-option') as HTMLElement;
+    if (firstOption) firstOption.focus();
+}
+
+function closeConnectionsDropdown() {
+    connectionsDropdown.classList.remove('open');
+    connectionsMenu.style.display = 'none';
+    connectionsToggle.setAttribute('aria-expanded', 'false');
+}
+
+// Initializing dropdown listeners
+connectionsToggle.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleConnectionsDropdown();
+});
+
+connectionsToggle.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        openConnectionsDropdown();
+    }
+});
+
+document.addEventListener('click', (e) => {
+    if (!connectionsDropdown.contains(e.target as Node)) {
+        closeConnectionsDropdown();
+    }
+});
+
+async function showConnectSection() {
+    connectSection.style.display = 'block';
+    explorerSection.style.display = 'none';
+    explorerNav.style.display = 'none';
+
+    if (isConnected) {
+        connectCancelBtn.style.display = 'inline-block';
+    } else {
+        connectCancelBtn.style.display = 'none';
+    }
+
+    await loadSavedConnections();
+
+    // Only focus input if nothing was auto-selected (selectConnection focuses connectBtn)
+    if (document.activeElement !== connectBtn) {
+        connectionStringInput.focus();
+    }
 }
 
 async function updateContainerList() {
@@ -898,6 +1089,9 @@ document.addEventListener('click', () => hamburgerMenu.style.display = 'none');
 menuSettings.addEventListener('click', openSettings);
 menuAbout.addEventListener('click', openSettings);
 menuManual.addEventListener('click', openManual);
+menuConnections.addEventListener('click', () => {
+    api.openConnectionsFile();
+});
 menuQuit.addEventListener('click', () => {
     api.quit();
 });
@@ -921,21 +1115,19 @@ uploadBlobBtn.addEventListener('click', async () => {
     }
 });
 
-menuAccount.addEventListener('click', () => {
-    connectSection.style.display = 'block';
-    explorerSection.style.display = 'none';
-    explorerNav.style.display = 'none';
-    connectionStringInput.focus();
-});
+deleteBlobsBtn.addEventListener('click', () => deleteBlobsUI(Array.from(selectedBlobs)));
 
-navConnectBtn.addEventListener('click', () => {
-    connectSection.style.display = 'block';
-    explorerSection.style.display = 'none';
-    explorerNav.style.display = 'none';
-    connectionStringInput.focus();
-});
+menuAccount.addEventListener('click', showConnectSection);
+navConnectBtn.addEventListener('click', showConnectSection);
 
 connectionStringInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        connectBtn.click();
+    }
+});
+
+connectionNameInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
         e.preventDefault();
         connectBtn.click();
@@ -951,8 +1143,27 @@ headerTimeToggle.addEventListener('change', () => {
 connectBtn.addEventListener('click', async () => {
     const connStr = connectionStringInput.value.trim();
     if (!connStr) return;
+
+    // Show loading state
+    connectBtn.disabled = true;
+    connectBtn.textContent = 'Connecting...';
+
     const result = await api.connect(connStr);
+
     if (result.success) {
+        isConnected = true;
+
+        // Save if requested
+        if (saveConnectionCheck.checked) {
+            const name = connectionNameInput.value.trim() || result.accountName || 'Unnamed Connection';
+            await api.saveConnection(name, connStr);
+            saveConnectionCheck.checked = false;
+            connectionNameInput.value = '';
+            connectionNameInput.style.display = 'none';
+            // Refresh list for next time
+            await loadSavedConnections();
+        }
+
         connectSection.style.display = 'none';
         explorerSection.style.display = 'block';
         explorerNav.style.display = 'flex';
@@ -963,20 +1174,37 @@ connectBtn.addEventListener('click', async () => {
         navConnectBtn.tabIndex = -1;
         if (accountNameLabel) accountNameLabel.textContent = result.accountName;
         sidebarAccountNameLabel.textContent = result.accountName;
+    } else {
+        alert('Connection failed: ' + result.error);
+    }
+
+    connectBtn.disabled = false;
+    connectBtn.textContent = 'Connect Account';
+});
+
+connectCancelBtn.addEventListener('click', () => {
+    if (isConnected) {
+        connectSection.style.display = 'none';
+        explorerSection.style.display = 'block';
+        explorerNav.style.display = 'flex';
+    }
+});
+
+saveConnectionCheck.addEventListener('change', () => {
+    connectionNameInput.style.display = saveConnectionCheck.checked ? 'block' : 'none';
+    if (saveConnectionCheck.checked) {
+        connectionNameInput.focus();
     }
 });
 
 disconnectBtn.addEventListener('click', async () => {
     await api.disconnect();
-    connectSection.style.display = 'block';
-    explorerSection.style.display = 'none';
-    explorerNav.style.display = 'none';
-    navConnectBtn.tabIndex = 0;
+    isConnected = false;
+    showConnectSection();
     sidebarAccountNameLabel.textContent = 'Not Connected';
     connectionStringInput.value = '';
     tabs = [];
     activeTabId = 'containers-home';
-    connectionStringInput.focus();
 });
 
 window.addEventListener('keydown', (e) => {
@@ -1042,6 +1270,25 @@ window.addEventListener('keydown', (e) => {
         return;
     }
 
+    // Select All (Cmd+A)
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'a') {
+        if (modalVisible) return;
+        if (blobView.style.display === 'block' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+            e.preventDefault();
+            selectAllBlobs();
+            return;
+        }
+    }
+
+    // Delete Blobs (Delete key or Alt+Backspace)
+    if ((e.key === 'Delete' || (e.altKey && e.key === 'Backspace')) && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        if (blobView.style.display === 'block' && selectedBlobs.size > 0) {
+            e.preventDefault();
+            deleteBlobsUI(Array.from(selectedBlobs));
+            return;
+        }
+    }
+
     if (e.key === 'Backspace' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         if (blobView.style.display === 'block') {
             e.preventDefault();
@@ -1054,6 +1301,10 @@ window.addEventListener('keydown', (e) => {
         if (isMenuOpen) {
             hamburgerMenu.style.display = 'none';
             sidebarHamburger.focus();
+            return;
+        }
+        if (connectSection.style.display === 'block' && isConnected) {
+            connectCancelBtn.click();
             return;
         }
     }
@@ -1165,7 +1416,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 window.addEventListener('load', async () => {
-    connectionStringInput.focus();
+    showConnectSection();
     const version = await api.getVersion();
     if (footerVersion) {
         footerVersion.textContent = `v${version}`;
