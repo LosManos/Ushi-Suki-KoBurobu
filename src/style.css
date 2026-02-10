@@ -538,7 +538,25 @@ input[type="password"]:focus {
 .blob-name {
     white-space: nowrap;
     overflow: hidden;
+    display: flex;
+    min-width: 0;
+}
+
+.blob-name-parent {
+    color: var(--text-secondary);
+    opacity: 0.5;
+    overflow: hidden;
     text-overflow: ellipsis;
+    flex-shrink: 1;
+}
+
+.blob-name-last {
+    color: var(--text-primary);
+    font-weight: 600;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
 }
 
 .blob-meta {

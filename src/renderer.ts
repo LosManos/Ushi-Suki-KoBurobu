@@ -667,7 +667,7 @@ async function showBlobProperties(blobName: string) {
 
         modalContent.innerHTML = `
             <div class="property-grid">
-                <div class="property-item"><span class="property-label">Name</span><span class="property-value">${props.name}</span></div>
+                <div class="property-item"><span class="property-label">Name</span><span class="property-value">${formatBlobName(props.name, blobDelimiterInput.value || '/')}</span></div>
                 <div class="property-item"><span class="property-label">Content Type</span><span class="property-value">${props.contentType}</span></div>
                 <div class="property-item"><span class="property-label">Size</span><span class="property-value">${formatBytes(props.contentLength)}</span></div>
                 <div class="property-item"><span class="property-label">Created On</span><span class="property-value">${formatDateTime(props.createdOn)}</span></div>
@@ -761,6 +761,26 @@ function closeModal() {
     }
 }
 
+function formatBlobName(fullName: string, delimiter: string) {
+    if (!delimiter) return `<span class="blob-name-last">${fullName}</span>`;
+
+    let checkPath = fullName;
+    const endsWithDelimiter = fullName.endsWith(delimiter);
+    if (endsWithDelimiter) {
+        checkPath = fullName.slice(0, -delimiter.length);
+    }
+
+    const lastIdx = checkPath.lastIndexOf(delimiter);
+    if (lastIdx === -1) {
+        return `<span class="blob-name-last">${fullName}</span>`;
+    }
+
+    const parent = fullName.substring(0, lastIdx + delimiter.length);
+    const last = fullName.substring(lastIdx + delimiter.length);
+
+    return `<span class="blob-name-parent">${parent}</span><span class="blob-name-last">${last}</span>`;
+}
+
 async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) {
     if (!currentContainer) return;
     updateBreadcrumbs();
@@ -791,7 +811,7 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
             li.innerHTML = `
                 <div class="blob-item-main">
                     <span>${blob.type === 'directory' ? '📁' : '📄'}</span>
-                    <span class="blob-name">${blob.name}</span>
+                    <span class="blob-name">${formatBlobName(blob.name, delimiter || '/')}</span>
                 </div>
                 <div class="blob-meta">
                     ${blob.type === 'directory' ? '' : `
