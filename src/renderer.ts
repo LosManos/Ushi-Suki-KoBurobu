@@ -56,6 +56,9 @@ const modalContent = document.getElementById('modal-content') as HTMLElement;
 const modalOkBtn = document.getElementById('modal-ok-btn') as HTMLButtonElement;
 const modalCancelBtn = document.getElementById('modal-cancel-btn') as HTMLButtonElement;
 const modalConfirmDeleteBtn = document.getElementById('modal-confirm-delete-btn') as HTMLButtonElement;
+const metadataSidebar = document.getElementById('metadata-sidebar') as HTMLElement;
+const metadataContent = document.getElementById('metadata-content') as HTMLElement;
+const closeMetadataBtn = document.getElementById('close-metadata-btn') as HTMLButtonElement;
 
 // Electron API (from preload)
 const api = (window as any).electronAPI;
@@ -83,6 +86,7 @@ function toggleBlobSelection(blobName: string, element: HTMLElement) {
         element.classList.add('selected');
     }
     updateDeleteButtonVisibility();
+    updateMetadataSidebar();
 }
 
 function updateDeleteButtonVisibility() {
@@ -111,6 +115,7 @@ function clearSelection() {
     const items = blobList.querySelectorAll('.list-item.selected');
     items.forEach(item => item.classList.remove('selected'));
     updateDeleteButtonVisibility();
+    updateMetadataSidebar();
 }
 
 function formatBytes(bytes: number, decimals = 2) {
@@ -682,6 +687,60 @@ async function showBlobProperties(blobName: string) {
     }
 }
 
+async function updateMetadataSidebar(blobName?: string) {
+    if (!currentContainer) {
+        metadataSidebar.classList.add('hidden');
+        return;
+    }
+
+    const activeBlobName = blobName || (selectedBlobs.size === 1 ? Array.from(selectedBlobs)[0] : null);
+
+    if (!activeBlobName) {
+        if (selectedBlobs.size > 1) {
+            metadataContent.innerHTML = `
+                <div class="empty-state">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">📦</div>
+                    <p>${selectedBlobs.size} items selected</p>
+                </div>
+            `;
+            metadataSidebar.classList.remove('hidden');
+        } else {
+            metadataSidebar.classList.add('hidden');
+            metadataContent.innerHTML = '';
+        }
+        return;
+    }
+
+    metadataSidebar.classList.remove('hidden');
+    // Don't show "Loading..." if we are just moving focus quickly, but for now it's okay
+    // metadataContent.innerHTML = '<div class="text-secondary">Loading details...</div>';
+
+    const result = await api.getBlobProperties(currentContainer, activeBlobName);
+
+    if (result.success) {
+        const props = result.properties;
+        let metadataHtml = '';
+        if (props.metadata && Object.keys(props.metadata).length > 0) {
+            const rows = Object.entries(props.metadata).map(([key, value]) => `<tr><td>${key}</td><td>${value}</td></tr>`).join('');
+            metadataHtml = `<div class="metadata-section"><span class="property-label">Metadata</span><table class="metadata-table"><tbody>${rows}</tbody></table></div>`;
+        }
+
+        metadataContent.innerHTML = `
+            <div class="property-grid">
+                <div class="property-item"><span class="property-label">Name</span><span class="property-value">${formatBlobName(props.name, blobDelimiterInput.value || '/')}</span></div>
+                <div class="property-item"><span class="property-label">Content Type</span><span class="property-value">${props.contentType}</span></div>
+                <div class="property-item"><span class="property-label">Size</span><span class="property-value">${formatBytes(props.contentLength)}</span></div>
+                <div class="property-item"><span class="property-label">Created On</span><span class="property-value">${formatDateTime(props.createdOn)}</span></div>
+                <div class="property-item"><span class="property-label">Last Modified</span><span class="property-value">${formatDateTime(props.lastModified)}</span></div>
+                ${metadataHtml}
+            </div>
+        `;
+    } else {
+        metadataContent.innerHTML = `<div class="text-danger">Error: ${result.error}</div>`;
+    }
+}
+
+
 const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'];
 
 function isImage(name: string, contentType: string): boolean {
@@ -893,6 +952,13 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         li.tabIndex = -1;
                         next.tabIndex = 0;
                         next.focus();
+                        const nextBlobName = next.getAttribute('data-blob-name');
+                        const nextBlobType = next.getAttribute('data-blob-type');
+                        if (nextBlobName && nextBlobType !== 'directory') {
+                            updateMetadataSidebar(nextBlobName);
+                        } else {
+                            updateMetadataSidebar();
+                        }
                     }
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
@@ -901,6 +967,13 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         li.tabIndex = -1;
                         prev.tabIndex = 0;
                         prev.focus();
+                        const prevBlobName = prev.getAttribute('data-blob-name');
+                        const prevBlobType = prev.getAttribute('data-blob-type');
+                        if (prevBlobName && prevBlobType !== 'directory') {
+                            updateMetadataSidebar(prevBlobName);
+                        } else {
+                            updateMetadataSidebar();
+                        }
                     }
                 } else if (e.key === 'Home') {
                     e.preventDefault();
@@ -909,6 +982,13 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         li.tabIndex = -1;
                         first.tabIndex = 0;
                         first.focus();
+                        const firstBlobName = first.getAttribute('data-blob-name');
+                        const firstBlobType = first.getAttribute('data-blob-type');
+                        if (firstBlobName && firstBlobType !== 'directory') {
+                            updateMetadataSidebar(firstBlobName);
+                        } else {
+                            updateMetadataSidebar();
+                        }
                     }
                 } else if (e.key === 'End') {
                     e.preventDefault();
@@ -917,6 +997,13 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         li.tabIndex = -1;
                         last.tabIndex = 0;
                         last.focus();
+                        const lastBlobName = last.getAttribute('data-blob-name');
+                        const lastBlobType = last.getAttribute('data-blob-type');
+                        if (lastBlobName && lastBlobType !== 'directory') {
+                            updateMetadataSidebar(lastBlobName);
+                        } else {
+                            updateMetadataSidebar();
+                        }
                     }
                 } else if (e.key === 'ArrowLeft') {
                     e.preventDefault();
@@ -998,6 +1085,13 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         // Ensure it's scrolled into view if it was focused by name
                         if (typeof focusItem === 'string') {
                             targetItem.scrollIntoView({ block: 'nearest' });
+                        }
+
+                        // Update sidebar for focused item
+                        const blobName = targetItem.getAttribute('data-blob-name');
+                        const blobType = targetItem.getAttribute('data-blob-type');
+                        if (blobName && blobType !== 'directory') {
+                            updateMetadataSidebar(blobName);
                         }
                     }
                 } else {
@@ -1171,6 +1265,11 @@ uploadBlobBtn.addEventListener('click', async () => {
 });
 
 deleteBlobsBtn.addEventListener('click', () => deleteBlobsUI(Array.from(selectedBlobs)));
+
+closeMetadataBtn.addEventListener('click', () => {
+    metadataSidebar.classList.add('hidden');
+    clearSelection();
+});
 
 menuAccount.addEventListener('click', showConnectSection);
 navConnectBtn.addEventListener('click', showConnectSection);

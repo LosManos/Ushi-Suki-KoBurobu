@@ -56,3 +56,4 @@ The following shortcuts are available to speed up your workflow:
 - **Sidebar**: Access account actions (hamburger menu, disconnect), see your connected account name, and jump between containers.
 - **Hierarchical Navigation**: Use breadcrumbs at the top of the blob list to quickly jump back to parent folders.
 - **Status Bar**: Toggles between Local and UTC time display and shows application version.
+- **Details Sidebar**: When a blob is selected or focused, a sidebar appears on the right showing its metadata (size, content type, created/modified dates, and custom metadata). You can close it by clicking the "✕" button or deselecting the item.
