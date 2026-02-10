@@ -53,6 +53,6 @@ The following shortcuts are available to speed up your workflow:
 
 - **Dashboard**: The main screen for connecting and seeing account stats.
 - **Tabs**: Containers open in separate tabs. Switching tabs preserves search filters and navigation state. The first item in a container is automatically focused upon opening. Closing all tabs returns to the Containers overview.
-- **Sidebar Treeview**: Quickly jump between containers or open new ones using the list in the sidebar.
+- **Sidebar**: Access account actions (hamburger menu, disconnect), see your connected account name, and jump between containers.
 - **Hierarchical Navigation**: Use breadcrumbs at the top of the blob list to quickly jump back to parent folders.
-- **Settings**: Manage application preferences, such as toggling between Local and UTC time display.
+- **Status Bar**: Toggles between Local and UTC time display and shows application version.

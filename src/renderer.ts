@@ -31,7 +31,7 @@ const connectionsToggle = document.getElementById('connections-toggle') as HTMLE
 const connectionsMenu = document.getElementById('connections-menu') as HTMLUListElement;
 const savedConnectionsArea = document.getElementById('saved-connections-area') as HTMLElement;
 
-const headerTimeToggle = document.getElementById('header-time-toggle') as HTMLInputElement;
+const footerTimeToggle = document.getElementById('footer-time-toggle') as HTMLInputElement;
 
 const explorerNav = document.getElementById('explorer-nav') as HTMLElement;
 const sidebarTreeview = document.getElementById('sidebar-treeview') as HTMLUListElement;
@@ -1051,7 +1051,7 @@ async function openSettings() {
         useUTC = false;
         modalLocalBtn.classList.add('active');
         modalUtcBtn.classList.remove('active');
-        headerTimeToggle.checked = false;
+        footerTimeToggle.checked = false;
         updateBlobList();
         updateContainerList();
     };
@@ -1060,7 +1060,7 @@ async function openSettings() {
         useUTC = true;
         modalUtcBtn.classList.add('active');
         modalLocalBtn.classList.remove('active');
-        headerTimeToggle.checked = true;
+        footerTimeToggle.checked = true;
         updateBlobList();
         updateContainerList();
     };
@@ -1154,8 +1154,8 @@ connectionNameInput.addEventListener('keydown', (e) => {
     }
 });
 
-headerTimeToggle.addEventListener('change', () => {
-    useUTC = headerTimeToggle.checked;
+footerTimeToggle.addEventListener('change', () => {
+    useUTC = footerTimeToggle.checked;
     updateBlobList();
     updateContainerList();
 });

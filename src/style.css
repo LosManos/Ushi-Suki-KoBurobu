@@ -44,8 +44,13 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 2rem;
+    margin-bottom: 0.5rem;
     padding: 0.5rem 0;
+    -webkit-app-region: drag;
+}
+
+.sidebar-header>* {
+    -webkit-app-region: no-drag;
 }
 
 .hamburger-btn {
@@ -174,7 +179,7 @@ nav {
     text-transform: uppercase;
     color: var(--text-secondary);
     letter-spacing: 0.1em;
-    margin: 1.5rem 0 0.5rem 12px;
+    margin: 0.75rem 0 0.25rem 12px;
     opacity: 0.6;
     display: flex;
     justify-content: space-between;
@@ -246,44 +251,18 @@ nav {
     overflow-y: auto;
     background: radial-gradient(circle at top right, #1e293b, #0f172a);
     padding-bottom: 30px;
-}
-
-.top-bar {
-    height: 64px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 2rem;
-    border-bottom: 1px solid var(--glass-border);
-    background-color: rgba(15, 23, 42, 0.8);
-    backdrop-filter: blur(8px);
-    -webkit-app-region: drag;
-    /* Allows dragging the window */
-}
-
-.top-bar h2 {
-    font-size: 1rem;
-    font-weight: 400;
-    color: var(--text-secondary);
-}
-
-.user-profile {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-    -webkit-app-region: no-drag;
+    padding-top: 0;
 }
 
 .time-toggle-container {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: rgba(255, 255, 255, 0.03);
-    padding: 4px 10px;
+    padding: 2px 8px;
     border-radius: 20px;
     border: 1px solid var(--glass-border);
+    height: 22px;
 }
 
 .time-mode-label {
@@ -485,7 +464,7 @@ input[type="password"]:focus {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
     margin-bottom: 2rem;
 }
 
@@ -493,7 +472,7 @@ input[type="password"]:focus {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .data-list {
@@ -606,7 +585,7 @@ input[type="password"]:focus {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
 }
 
 .breadcrumb h3 {
@@ -664,7 +643,7 @@ input[type="password"]:focus {
 
 /* Dashboard Styling */
 .dashboard {
-    padding: 2rem;
+    padding: 0.5rem 1.5rem;
     max-width: 1000px;
     margin: 0 auto;
     width: 100%;
@@ -674,14 +653,14 @@ input[type="password"]:focus {
     background: linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(129, 140, 248, 0.1) 100%);
     border: 1px solid var(--glass-border);
     border-radius: 16px;
-    padding: 2.5rem;
-    margin-bottom: 2rem;
+    padding: 1.5rem 2.5rem;
+    margin-bottom: 1.5rem;
     backdrop-filter: blur(4px);
 }
 
 .welcome-card h3 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
     font-family: 'Outfit', sans-serif;
 }
 
@@ -765,6 +744,17 @@ input[type="password"]:focus {
     font-size: 0.8rem;
 }
 
+.btn-xs {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+}
+
 /* Custom Tooltip */
 [data-tooltip] {
     position: relative;
@@ -803,7 +793,13 @@ input[type="password"]:focus {
     bottom: auto;
 }
 
-.tooltip-bottom[data-tooltip]:hover::after {
+.tooltip-top[data-tooltip]::after {
+    bottom: calc(100% + 8px);
+    top: auto;
+}
+
+.tooltip-bottom[data-tooltip]:hover::after,
+.tooltip-top[data-tooltip]:hover::after {
     transform: translateX(-50%) translateY(0);
 }
 
@@ -1278,9 +1274,9 @@ input[type="password"]:focus {
     display: flex;
     gap: 2px;
     background: rgba(15, 23, 42, 0.4);
-    padding: 8px 12px 0 12px;
+    padding: 4px 12px 0 12px;
     border-bottom: 1px solid var(--glass-border);
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     overflow-x: auto;
     scrollbar-width: none;
     position: sticky;
