@@ -782,6 +782,7 @@ function formatBlobName(fullName: string, delimiter: string) {
 }
 
 async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) {
+    let itemsBefore = 0;
     if (!currentContainer) return;
     updateBreadcrumbs();
 
@@ -798,7 +799,20 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
     const result = await api.listBlobs(currentContainer, pageSize, currentContinuationToken, prefix, delimiter);
 
     if (result.success) {
-        if (!isLoadMore) blobList.innerHTML = '';
+        if (!isLoadMore) {
+            blobList.innerHTML = '';
+        } else {
+            itemsBefore = blobList.querySelectorAll('.list-item:not(.empty)').length;
+            const existingLoadMore = blobList.querySelector('.load-more-item');
+            if (existingLoadMore) {
+                if (document.activeElement === existingLoadMore) {
+                    focusItem = true;
+                }
+                existingLoadMore.remove();
+                itemsBefore--;
+            }
+        }
+
         if (result.blobs.length === 0 && !isLoadMore) {
             blobList.innerHTML = '<li class="list-item empty">No blobs found in this container.</li>';
         }
@@ -928,6 +942,7 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
 
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
+                    e.stopPropagation();
                     updateBlobList(true);
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
@@ -937,6 +952,18 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         prev.tabIndex = 0;
                         prev.focus();
                     }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    const first = items[0];
+                    if (first) {
+                        loadMoreLi.tabIndex = -1;
+                        first.tabIndex = 0;
+                        first.focus();
+                    }
+                } else if (e.key === 'End') {
+                    e.preventDefault();
                 } else if (e.key === 'ArrowLeft') {
                     e.preventDefault();
                     const activeTreeItem = sidebarTreeview.querySelector('.tree-item.active') as HTMLElement;
@@ -949,10 +976,10 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
         }
 
         // Handle focus restoration or initial focus
-        if (!isLoadMore) {
-            const allItems = Array.from(blobList.querySelectorAll('.list-item:not(.empty)')) as HTMLElement[];
-            if (allItems.length > 0) {
-                // Default: second all items to tabIndex -1
+        const allItems = Array.from(blobList.querySelectorAll('.list-item:not(.empty)')) as HTMLElement[];
+        if (allItems.length > 0) {
+            if (!isLoadMore) {
+                // Default: set all items to tabIndex -1
                 allItems.forEach(i => i.tabIndex = -1);
 
                 let targetItem: HTMLElement | null = null;
@@ -974,8 +1001,16 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         }
                     }
                 } else {
-                    // Always ensure at least the first item has tabIndex 0 for roving tabindex entry
                     allItems[0].tabIndex = 0;
+                }
+            } else if (focusItem === true) {
+                // If we were loading more and wanted to focus, focus the first of the new items
+                const targetItem = allItems[itemsBefore];
+                if (targetItem) {
+                    allItems.forEach(i => i.tabIndex = -1);
+                    targetItem.tabIndex = 0;
+                    targetItem.focus();
+                    targetItem.scrollIntoView({ block: 'nearest' });
                 }
             }
         }
