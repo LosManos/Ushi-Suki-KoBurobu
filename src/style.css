@@ -60,6 +60,11 @@ body {
     border-left: none;
 }
 
+.sidebar-right {
+    user-select: text;
+    -webkit-user-select: text;
+}
+
 .metadata-sidebar-content {
     flex: 1;
     display: flex;
@@ -81,8 +86,9 @@ body {
 
 .metadata-sidebar-content .property-grid {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    grid-template-columns: 100px 1fr auto;
+    gap: 8px 12px;
+    align-items: center;
 }
 
 .sidebar-right .sidebar-header {
@@ -1039,8 +1045,9 @@ input[type="password"]:focus {
 
 .property-grid {
     display: grid;
-    grid-template-columns: 140px 1fr;
-    gap: 12px;
+    grid-template-columns: 120px 1fr auto;
+    gap: 8px 12px;
+    align-items: center;
 }
 
 .property-label {
@@ -1103,7 +1110,38 @@ input[type="password"]:focus {
 .metadata-table td:first-child {
     color: var(--accent);
     font-weight: 600;
-    width: 40%;
+    width: 35%;
+}
+
+.copy-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 4px;
+    border-radius: 4px;
+    opacity: 0.3;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.copy-btn:hover {
+    background: var(--glass-bg);
+    color: var(--accent);
+    opacity: 1;
+}
+
+.copy-btn.success {
+    color: #10b981;
+    opacity: 1;
+}
+
+.property-item:hover .copy-btn,
+.metadata-table tr:hover .copy-btn {
+    opacity: 0.8;
 }
 
 /* Loading Spinner */

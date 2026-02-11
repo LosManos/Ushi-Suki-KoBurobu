@@ -142,6 +142,24 @@ function formatDateTime(dateStr: string | Date): string {
     return `${y}-${m}-${d} ${h}:${min}:${s}`;
 }
 
+async function copyToClipboard(text: string, element: HTMLElement) {
+    try {
+        await navigator.clipboard.writeText(text);
+        const originalText = element.innerHTML;
+        element.innerHTML = '✓';
+        element.classList.add('success');
+        setTimeout(() => {
+            element.innerHTML = originalText;
+            element.classList.remove('success');
+        }, 1500);
+    } catch (err) {
+        console.error('Failed to copy: ', err);
+    }
+}
+
+// Expose to window for inline onclick handlers
+(window as any).copyToClipboard = copyToClipboard;
+
 async function loadSavedConnections() {
     const result = await api.getConnections();
     if (result.success) {
@@ -664,19 +682,49 @@ async function showBlobProperties(blobName: string) {
 
     if (result.success) {
         const props = result.properties;
+        const delimiter = blobDelimiterInput.value || '/';
+        const renderRow = (label: string, value: string, displayValue?: string) => {
+            const escapedValue = value.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const escapedLabel = label.replace(/'/g, "\\'");
+            return `
+            <div class="property-item">
+                <span class="property-label">${label}</span>
+                <span class="property-value">${displayValue || value}</span>
+                <div class="copy-actions" style="display: flex; gap: 4px;">
+                    <button class="copy-btn" onclick="copyToClipboard('${escapedLabel}', this)" title="Copy Key: ${label}">🔑</button>
+                    <button class="copy-btn" onclick="copyToClipboard('${escapedValue}', this)" title="Copy Value: ${value}">📋</button>
+                </div>
+            </div>`;
+        };
+
         let metadataHtml = '';
         if (props.metadata && Object.keys(props.metadata).length > 0) {
-            const rows = Object.entries(props.metadata).map(([key, value]) => `<tr><td>${key}</td><td>${value}</td></tr>`).join('');
+            const rows = Object.entries(props.metadata).map(([key, value]) => {
+                const valStr = String(value);
+                const escapedKey = key.replace(/'/g, "\\'");
+                const escapedValue = valStr.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                return `
+                <tr>
+                    <td>${key}</td>
+                    <td>${valStr}</td>
+                    <td style="width: 70px;">
+                        <div style="display: flex; gap: 4px;">
+                            <button class="copy-btn" onclick="copyToClipboard('${escapedKey}', this)" title="Copy Key: ${key}">🔑</button>
+                            <button class="copy-btn" onclick="copyToClipboard('${escapedValue}', this)" title="Copy Value: ${valStr}">📋</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
             metadataHtml = `<div class="metadata-section"><span class="property-label">Metadata</span><table class="metadata-table"><tbody>${rows}</tbody></table></div>`;
         }
 
         modalContent.innerHTML = `
             <div class="property-grid">
-                <div class="property-item"><span class="property-label">Name</span><span class="property-value">${formatBlobName(props.name, blobDelimiterInput.value || '/')}</span></div>
-                <div class="property-item"><span class="property-label">Content Type</span><span class="property-value">${props.contentType}</span></div>
-                <div class="property-item"><span class="property-label">Size</span><span class="property-value">${formatBytes(props.contentLength)}</span></div>
-                <div class="property-item"><span class="property-label">Created On</span><span class="property-value">${formatDateTime(props.createdOn)}</span></div>
-                <div class="property-item"><span class="property-label">Last Modified</span><span class="property-value">${formatDateTime(props.lastModified)}</span></div>
+                ${renderRow('Name', props.name, formatBlobName(props.name, delimiter))}
+                ${renderRow('Content Type', props.contentType)}
+                ${renderRow('Size', formatBytes(props.contentLength))}
+                ${renderRow('Created On', formatDateTime(props.createdOn))}
+                ${renderRow('Last Modified', formatDateTime(props.lastModified))}
                 ${metadataHtml}
             </div>
         `;
@@ -719,19 +767,49 @@ async function updateMetadataSidebar(blobName?: string) {
 
     if (result.success) {
         const props = result.properties;
+        const delimiter = blobDelimiterInput.value || '/';
+        const renderRow = (label: string, value: string, displayValue?: string) => {
+            const escapedValue = value.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+            const escapedLabel = label.replace(/'/g, "\\'");
+            return `
+            <div class="property-item">
+                <span class="property-label">${label}</span>
+                <span class="property-value">${displayValue || value}</span>
+                <div class="copy-actions" style="display: flex; gap: 4px;">
+                    <button class="copy-btn" onclick="copyToClipboard('${escapedLabel}', this)" title="Copy Key: ${label}">🔑</button>
+                    <button class="copy-btn" onclick="copyToClipboard('${escapedValue}', this)" title="Copy Value: ${value}">📋</button>
+                </div>
+            </div>`;
+        };
+
         let metadataHtml = '';
         if (props.metadata && Object.keys(props.metadata).length > 0) {
-            const rows = Object.entries(props.metadata).map(([key, value]) => `<tr><td>${key}</td><td>${value}</td></tr>`).join('');
+            const rows = Object.entries(props.metadata).map(([key, value]) => {
+                const valStr = String(value);
+                const escapedKey = key.replace(/'/g, "\\'");
+                const escapedValue = valStr.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+                return `
+                <tr>
+                    <td>${key}</td>
+                    <td>${valStr}</td>
+                    <td style="width: 70px;">
+                        <div style="display: flex; gap: 4px;">
+                            <button class="copy-btn" onclick="copyToClipboard('${escapedKey}', this)" title="Copy Key: ${key}">🔑</button>
+                            <button class="copy-btn" onclick="copyToClipboard('${escapedValue}', this)" title="Copy Value: ${valStr}">📋</button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
             metadataHtml = `<div class="metadata-section"><span class="property-label">Metadata</span><table class="metadata-table"><tbody>${rows}</tbody></table></div>`;
         }
 
         metadataContent.innerHTML = `
             <div class="property-grid">
-                <div class="property-item"><span class="property-label">Name</span><span class="property-value">${formatBlobName(props.name, blobDelimiterInput.value || '/')}</span></div>
-                <div class="property-item"><span class="property-label">Content Type</span><span class="property-value">${props.contentType}</span></div>
-                <div class="property-item"><span class="property-label">Size</span><span class="property-value">${formatBytes(props.contentLength)}</span></div>
-                <div class="property-item"><span class="property-label">Created On</span><span class="property-value">${formatDateTime(props.createdOn)}</span></div>
-                <div class="property-item"><span class="property-label">Last Modified</span><span class="property-value">${formatDateTime(props.lastModified)}</span></div>
+                ${renderRow('Name', props.name, formatBlobName(props.name, delimiter))}
+                ${renderRow('Content Type', props.contentType)}
+                ${renderRow('Size', formatBytes(props.contentLength))}
+                ${renderRow('Created On', formatDateTime(props.createdOn))}
+                ${renderRow('Last Modified', formatDateTime(props.lastModified))}
                 ${metadataHtml}
             </div>
         `;
