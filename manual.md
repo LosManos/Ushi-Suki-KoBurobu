@@ -57,3 +57,7 @@ The following shortcuts are available to speed up your workflow:
 - **Hierarchical Navigation**: Use breadcrumbs at the top of the blob list to quickly jump back to parent folders.
 - **Status Bar**: Toggles between Local and UTC time display and shows application version.
 - **Details Sidebar**: When a blob is selected or focused, a sidebar appears on the right showing its metadata (size, content type, created/modified dates, and custom metadata). You can close it by clicking the "✕" button or deselecting the item. Both labels (🔑) and values (📋) can be copied to the clipboard by clicking their respective icons.
+
+## License
+
+This project is licensed under the **LGPLv3+NoEvil** license. See the `license.md` file for full details.

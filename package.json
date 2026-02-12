@@ -11,7 +11,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "LGPLv3+NoEvil",
   "devDependencies": {
     "@types/marked": "^5.0.2",
     "electron": "^40.0.0",
