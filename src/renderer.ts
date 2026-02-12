@@ -63,6 +63,14 @@ const closeMetadataBtn = document.getElementById('close-metadata-btn') as HTMLBu
 // Electron API (from preload)
 const api = (window as any).electronAPI;
 
+// Lucide Icons
+function refreshIcons() {
+    if ((window as any).lucide) {
+        (window as any).lucide.createIcons();
+    }
+}
+refreshIcons();
+
 let currentContainer: string | null = null;
 let currentContinuationToken: string | undefined = undefined;
 let useUTC = false;
@@ -1234,7 +1242,7 @@ async function openSettings() {
             <div class="settings-section">
                 <div class="settings-section-title">About</div>
                 <div class="about-card">
-                    <div class="about-logo">📦</div>
+                    <div class="about-logo"><img src="assets/logo.png" class="about-logo-img" alt="KoBurobu Logo"></div>
                     <div class="settings-label">KoBurobu</div>
                     <div class="about-version">v${version}</div>
                     <div class="settings-description">Premium Azure Blob Storage Explorer</div>
@@ -1649,6 +1657,7 @@ window.addEventListener('keydown', (e) => {
 
 window.addEventListener('load', async () => {
     showConnectSection();
+    refreshIcons();
     const version = await api.getVersion();
     if (footerVersion) {
         footerVersion.textContent = `v${version}`;

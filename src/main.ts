@@ -1,11 +1,21 @@
-import { app, BrowserWindow, ipcMain, shell, safeStorage } from 'electron';
+import { app, BrowserWindow, ipcMain, shell, safeStorage, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
 import { BlobServiceClient } from '@azure/storage-blob';
 
 let blobServiceClient: BlobServiceClient | null = null;
+const isDev = !app.isPackaged;
+
+function getIconPath() {
+    // In dev mode, we want the source assets folder
+    // In production, we want the assets folder next to the main script (dist/assets)
+    return isDev
+        ? path.join(app.getAppPath(), 'assets', 'logo.png')
+        : path.join(__dirname, 'assets', 'logo.png');
+}
 
 function createWindow() {
+    const iconPath = getIconPath();
     const win = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -15,8 +25,16 @@ function createWindow() {
             nodeIntegration: false
         },
         titleBarStyle: 'hiddenInset',
-        backgroundColor: '#0f172a' // Matches CSS --bg-dark
+        backgroundColor: '#0f172a', // Matches CSS --bg-dark
+        icon: iconPath,
+        title: isDev ? 'Dev - KoBurobu' : 'KoBurobu'
     });
+
+    // On macOS, set the dock icon explicitly in dev mode
+    if (process.platform === 'darwin' && isDev && app.dock) {
+        const image = nativeImage.createFromPath(iconPath);
+        app.dock.setIcon(image);
+    }
 
     win.loadFile(path.join(__dirname, 'index.html'));
 }

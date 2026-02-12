@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Outfit:wght@400;700&display=swap"
         rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
 <body>
@@ -17,19 +18,34 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <button id="sidebar-hamburger" class="hamburger-btn" aria-label="Menu" title="Menu (Alt+Space)">
-                    <span class="hamburger-icon">☰</span>
+                    <i data-lucide="menu"></i>
                 </button>
                 <div id="hamburger-menu" class="dropdown-menu" style="display: none;">
-                    <button class="dropdown-item" id="menu-account">Account...</button>
-                    <button class="dropdown-item" id="menu-settings">Settings... <span
-                            class="shortcut">Cmd+,</span></button>
-                    <button class="dropdown-item" id="menu-manual">Manual... <span class="shortcut">F1</span></button>
-                    <button class="dropdown-item" id="menu-connections">Connections File...</button>
+                    <button class="dropdown-item" id="menu-account">
+                        <i data-lucide="user" class="menu-icon"></i> Account...
+                    </button>
+                    <button class="dropdown-item" id="menu-settings">
+                        <i data-lucide="settings" class="menu-icon"></i> Settings...
+                        <span class="shortcut">Cmd+,</span>
+                    </button>
+                    <button class="dropdown-item" id="menu-manual">
+                        <i data-lucide="book-open" class="menu-icon"></i> Manual...
+                        <span class="shortcut">F1</span>
+                    </button>
+                    <button class="dropdown-item" id="menu-connections">
+                        <i data-lucide="file-json" class="menu-icon"></i> Connections File...
+                    </button>
                     <div class="dropdown-divider"></div>
-                    <button class="dropdown-item" id="menu-about">About...</button>
+                    <button class="dropdown-item" id="menu-about">
+                        <i data-lucide="info" class="menu-icon"></i> About...
+                    </button>
                     <div class="dropdown-divider"></div>
-                    <button class="dropdown-item" id="menu-quit">Quit <span class="shortcut">Cmd+Q</span></button>
+                    <button class="dropdown-item" id="menu-quit">
+                        <i data-lucide="log-out" class="menu-icon"></i> Quit
+                        <span class="shortcut">Cmd+Q</span>
+                    </button>
                 </div>
+                <img src="assets/logo.png" class="app-logo-sidebar" alt="KoBurobu Logo">
                 <div id="sidebar-account-name" class="account-name-header">Not Connected</div>
                 <button id="disconnect-btn" class="btn btn-secondary btn-xs tooltip-bottom" style="display: none;"
                     data-tooltip="Disconnect (Cmd+D)" title="Disconnect (Cmd+D)">✕</button>

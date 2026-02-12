@@ -4,7 +4,7 @@
   "description": "This project is for handling blob storage in Azure",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc && cp src/index.html dist/index.html && cp src/style.css dist/style.css",
+    "build": "tsc && cp src/index.html dist/index.html && cp src/style.css dist/style.css && mkdir -p dist/assets && cp -r assets/* dist/assets/",
     "watch": "tsc -w",
     "start": "npm run build && electron .",
     "dev": "npm run build && electron ."
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.30.0",
+    "lucide": "^0.563.0",
     "marked": "^17.0.1"
   }
 }
