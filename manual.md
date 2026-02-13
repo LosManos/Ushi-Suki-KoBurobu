@@ -43,7 +43,7 @@ The following shortcuts are available to speed up your workflow:
 | `Cmd + 1-8` | Switch to Tab (1-8 for opened containers) |
 | `Cmd + 9` | Switch to Last Tab |
 | `Cmd + W` | Close current container tab |
-| `Alt + Space` | Toggle Hamburger Menu (navigatable with arrows) |
+| `Shift + Space` | Toggle Hamburger Menu (navigatable with arrows) |
 | `F1` / `Cmd + ?` | Open this Manual |
 | `Esc` | Bails out of dialogues and closes menus |
 | `Enter` | Updates/confirms in dialogues or closes info-only dialogues |

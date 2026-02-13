@@ -29,6 +29,6 @@ There must be a file `manual.md` describing how to use the application.
 # menu
 
 The menu must be navigatable with the keyboard.  
-The menu is opened with alt-space and can be closed with esc.
+The menu is opened with shift-space and can be closed with esc.
 
 Any item that opens a dialogue, that can be dismissed, must be suffixed with en ellipsis.

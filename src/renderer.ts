@@ -1575,7 +1575,7 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    if (e.altKey && e.code === 'Space') {
+    if (e.shiftKey && e.code === 'Space') {
         e.preventDefault();
         const willOpen = hamburgerMenu.style.display !== 'block';
         hamburgerMenu.style.display = willOpen ? 'block' : 'none';
