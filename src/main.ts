@@ -7,10 +7,10 @@ let blobServiceClient: BlobServiceClient | null = null;
 const isDev = !app.isPackaged;
 
 function getIconPath() {
-    // In dev mode, we want the source assets folder
-    // In production, we want the assets folder next to the main script (dist/assets)
+    // In dev mode, we want the source assets folder with the DEV banner
+    // In production, we want the standard assets folder next to the main script (dist/assets)
     return isDev
-        ? path.join(app.getAppPath(), 'assets', 'logo.png')
+        ? path.join(app.getAppPath(), 'assets', 'logo_dev.png')
         : path.join(__dirname, 'assets', 'logo.png');
 }
 
@@ -34,6 +34,16 @@ function createWindow() {
     if (process.platform === 'darwin' && isDev && app.dock) {
         const image = nativeImage.createFromPath(iconPath);
         app.dock.setIcon(image);
+    }
+
+    // Ensure the title always starts with 'Dev - ' in dev mode
+    if (isDev) {
+        win.on('page-title-updated', (event, title) => {
+            if (!title.startsWith('Dev - ')) {
+                event.preventDefault();
+                win.setTitle(`Dev - ${title}`);
+            }
+        });
     }
 
     win.loadFile(path.join(__dirname, 'index.html'));
