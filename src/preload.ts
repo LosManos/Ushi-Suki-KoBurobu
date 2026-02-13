@@ -20,11 +20,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openExternal: (url: string) => ipcRenderer.invoke('utils:openExternal', url),
     openPath: (path: string) => ipcRenderer.invoke('utils:openPath', path),
     openConnectionsFile: () => ipcRenderer.invoke('utils:openConnectionsFile'),
+    openSearchHistoryFile: () => ipcRenderer.invoke('utils:openSearchHistoryFile'),
     readManual: () => ipcRenderer.invoke('utils:readManual'),
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
     uploadBlob: (containerName: string) => ipcRenderer.invoke('azure:uploadBlob', containerName),
     saveConnection: (name: string, connectionString: string) => ipcRenderer.invoke('storage:saveConnection', name, connectionString),
     getConnections: () => ipcRenderer.invoke('storage:getConnections'),
     deleteConnection: (id: string) => ipcRenderer.invoke('storage:deleteConnection', id),
+    saveSearchHistory: (accountName: string, containerName: string, searchTerm: string) => ipcRenderer.invoke('storage:saveSearchHistory', accountName, containerName, searchTerm),
+    getSearchHistory: (accountName: string, containerName: string) => ipcRenderer.invoke('storage:getSearchHistory', accountName, containerName),
+    clearSearchHistory: () => ipcRenderer.invoke('storage:clearSearchHistory'),
     quit: () => ipcRenderer.send('app:quit')
 });

@@ -35,6 +35,9 @@
                     <button class="dropdown-item" id="menu-connections">
                         <i data-lucide="file-json" class="menu-icon"></i> Connections File...
                     </button>
+                    <button class="dropdown-item" id="menu-search-history">
+                        <i data-lucide="history" class="menu-icon"></i> Search History File...
+                    </button>
                     <div class="dropdown-divider"></div>
                     <button class="dropdown-item" id="menu-about">
                         <i data-lucide="info" class="menu-icon"></i> About...
@@ -134,7 +137,8 @@
                                 <div class="search-group">
                                     <input type="text" id="blob-search-input" class="form-control"
                                         placeholder="Search prefix..." data-tooltip="Search (Cmd+F)"
-                                        title="Search (Cmd+F)">
+                                        title="Search (Cmd+F)" list="search-history-list" autocomplete="off">
+                                    <datalist id="search-history-list"></datalist>
                                     <input type="text" id="blob-delimiter-input" class="form-control delimiter-input"
                                         placeholder="/" value="/" title="Delimiter">
                                     <button id="search-blobs-btn" class="btn btn-primary btn-sm"

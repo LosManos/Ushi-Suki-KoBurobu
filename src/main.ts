@@ -323,6 +323,17 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('utils:openSearchHistoryFile', async () => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const historyPath = path.join(userDataPath, 'search_history.json');
+            await shell.openPath(historyPath);
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
     ipcMain.handle('storage:saveConnection', async (_event, name: string, connectionString: string) => {
         try {
             const userDataPath = app.getPath('userData');
@@ -412,6 +423,116 @@ app.whenReady().then(() => {
             return { success: true };
         } catch (error: any) {
             console.error('Delete Connection Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('storage:getSearchHistory', async (_event, accountName: string, containerName: string) => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const historyPath = path.join(userDataPath, 'search_history.json');
+
+            if (!fs.existsSync(historyPath)) {
+                return { success: true, history: [] };
+            }
+
+            const content = fs.readFileSync(historyPath, 'utf-8').trim();
+            if (!content) return { success: true, history: [] };
+
+            let root: any = {};
+            try {
+                root = JSON.parse(content);
+            } catch (e) {
+                return { success: false, error: 'Failed to parse history file' };
+            }
+
+            const accounts = Array.isArray(root.accounts) ? root.accounts : [];
+            const accountEntry = accounts.find((a: any) => a.account === accountName);
+            if (!accountEntry || !Array.isArray(accountEntry.containers)) {
+                return { success: true, history: [] };
+            }
+
+            const containerEntry = accountEntry.containers.find((c: any) => c.container === containerName);
+            if (!containerEntry || !Array.isArray(containerEntry.history)) {
+                return { success: true, history: [] };
+            }
+
+            // Return terms for the UI
+            const history = containerEntry.history.map((item: any) => item.term);
+            return { success: true, history };
+        } catch (error: any) {
+            console.error('Get Search History Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('storage:saveSearchHistory', async (_event, accountName: string, containerName: string, searchTerm: string) => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const historyPath = path.join(userDataPath, 'search_history.json');
+
+            let root: any = { accounts: [] };
+            if (fs.existsSync(historyPath)) {
+                const content = fs.readFileSync(historyPath, 'utf-8').trim();
+                if (content) {
+                    try {
+                        const parsed = JSON.parse(content);
+                        if (parsed && Array.isArray(parsed.accounts)) {
+                            root = parsed;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to parse history file, starting fresh');
+                    }
+                }
+            }
+
+            // Find or Create Account
+            let accountEntry = root.accounts.find((a: any) => a.account === accountName);
+            if (!accountEntry) {
+                accountEntry = { account: accountName, containers: [] };
+                root.accounts.push(accountEntry);
+            }
+
+            // Find or Create Container
+            let containerEntry = accountEntry.containers.find((c: any) => c.container === containerName);
+            if (!containerEntry) {
+                containerEntry = { container: containerName, history: [] };
+                accountEntry.containers.push(containerEntry);
+            }
+
+            // Update History
+            let items = containerEntry.history;
+            const newItem = {
+                term: searchTerm,
+                lastUsed: new Date().toISOString()
+            };
+
+            // Deduplicate and push to top
+            items = items.filter((item: any) => item.term !== searchTerm);
+            items.unshift(newItem);
+
+            if (items.length > 30) {
+                items = items.slice(0, 30);
+            }
+            containerEntry.history = items;
+
+            fs.writeFileSync(historyPath, JSON.stringify(root, null, 2));
+            return { success: true };
+        } catch (error: any) {
+            console.error('Save Search History Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('storage:clearSearchHistory', async () => {
+        try {
+            const userDataPath = app.getPath('userData');
+            const historyPath = path.join(userDataPath, 'search_history.json');
+            if (fs.existsSync(historyPath)) {
+                fs.unlinkSync(historyPath);
+            }
+            return { success: true };
+        } catch (error: any) {
             return { success: false, error: error.message };
         }
     });

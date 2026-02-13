@@ -21,6 +21,7 @@ const menuAccount = document.getElementById('menu-account') as HTMLButtonElement
 const menuQuit = document.getElementById('menu-quit') as HTMLButtonElement;
 const menuManual = document.getElementById('menu-manual') as HTMLButtonElement;
 const menuConnections = document.getElementById('menu-connections') as HTMLButtonElement;
+const menuSearchHistory = document.getElementById('menu-search-history') as HTMLButtonElement;
 const uploadBlobBtn = document.getElementById('upload-blob-btn') as HTMLButtonElement;
 const deleteBlobsBtn = document.getElementById('delete-blobs-btn') as HTMLButtonElement;
 const connectCancelBtn = document.getElementById('connect-cancel-btn') as HTMLButtonElement;
@@ -30,6 +31,7 @@ const connectionsDropdown = document.getElementById('connections-dropdown') as H
 const connectionsToggle = document.getElementById('connections-toggle') as HTMLElement;
 const connectionsMenu = document.getElementById('connections-menu') as HTMLUListElement;
 const savedConnectionsArea = document.getElementById('saved-connections-area') as HTMLElement;
+const searchHistoryList = document.getElementById('search-history-list') as HTMLDataListElement;
 
 const footerTimeToggle = document.getElementById('footer-time-toggle') as HTMLInputElement;
 
@@ -179,6 +181,28 @@ async function loadSavedConnections() {
             selectConnection(savedConnections[0]);
         }
     }
+}
+
+function getCurrentAccountName(): string {
+    return sidebarAccountNameLabel.textContent || 'Unknown';
+}
+
+async function loadSearchHistory() {
+    if (!currentContainer) return;
+    const result = await api.getSearchHistory(getCurrentAccountName(), currentContainer);
+    if (result.success) {
+        renderSearchHistory(result.history);
+    }
+}
+
+function renderSearchHistory(history: string[]) {
+    if (!searchHistoryList) return;
+    searchHistoryList.innerHTML = '';
+    history.forEach(term => {
+        const option = document.createElement('option');
+        option.value = term;
+        searchHistoryList.appendChild(option);
+    });
 }
 
 function renderSavedConnections() {
@@ -509,6 +533,7 @@ function switchTab(id: string) {
 
             clearSelection();
             updateBreadcrumbs();
+            loadSearchHistory();
             updateBlobList(false, true);
         } else if (tabs.length === 0) {
             // Revert to containers view if no tabs left
@@ -1327,17 +1352,35 @@ menuManual.addEventListener('click', openManual);
 menuConnections.addEventListener('click', () => {
     api.openConnectionsFile();
 });
+menuSearchHistory.addEventListener('click', () => {
+    api.openSearchHistoryFile();
+});
 menuQuit.addEventListener('click', () => {
     api.quit();
 });
 
 refreshBlobsBtn.addEventListener('click', () => updateBlobList());
 pageSizeSelect.addEventListener('change', () => updateBlobList());
-searchBlobsBtn.addEventListener('click', () => updateBlobList(false, true));
 blobSearchInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
+        const term = blobSearchInput.value.trim();
+        if (term && currentContainer) {
+            api.saveSearchHistory(getCurrentAccountName(), currentContainer, term).then(() => loadSearchHistory());
+        }
         updateBlobList(false, true);
     }
+});
+
+searchBlobsBtn.addEventListener('click', () => {
+    const term = blobSearchInput.value.trim();
+    if (term && currentContainer) {
+        api.saveSearchHistory(getCurrentAccountName(), currentContainer, term).then(() => loadSearchHistory());
+    }
+    updateBlobList(false, true);
+});
+
+blobSearchInput.addEventListener('focus', () => {
+    loadSearchHistory();
 });
 
 uploadBlobBtn.addEventListener('click', async () => {
@@ -1657,6 +1700,7 @@ window.addEventListener('keydown', (e) => {
 
 window.addEventListener('load', async () => {
     showConnectSection();
+    loadSearchHistory();
     refreshIcons();
     const version = await api.getVersion();
     if (footerVersion) {
