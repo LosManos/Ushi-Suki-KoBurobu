@@ -32,7 +32,9 @@
       "buildResources": "assets"
     },
     "files": [
-      "dist",
+      "dist/**/*",
+      "manual.md",
+      "license.md",
       "package.json"
     ],
     "mac": {
