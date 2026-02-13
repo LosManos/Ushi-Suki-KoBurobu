@@ -4,22 +4,60 @@
   "description": "This project is for handling blob storage in Azure",
   "main": "dist/main.js",
   "scripts": {
-    "build": "tsc && cp src/index.html dist/index.html && cp src/style.css dist/style.css && mkdir -p dist/assets && cp -r assets/* dist/assets/",
+    "compile": "tsc && cp src/index.html dist/index.html && cp src/style.css dist/style.css && mkdir -p dist/assets && cp -r assets/* dist/assets/",
+    "build": "npm run compile && electron-builder",
     "watch": "tsc -w",
-    "start": "npm run build && electron .",
-    "dev": "npm run build && electron ."
+    "start": "npm run compile && electron .",
+    "dev": "npm run compile && electron ."
   },
   "keywords": [],
-  "author": "",
+  "author": "LosManos",
   "license": "LGPLv3+NoEvil",
   "devDependencies": {
     "@types/marked": "^5.0.2",
     "electron": "^40.0.0",
+    "electron-builder": "^25.1.8",
     "typescript": "^5.7.0"
   },
   "dependencies": {
     "@azure/storage-blob": "^12.30.0",
     "lucide": "^0.563.0",
     "marked": "^17.0.1"
+  },
+  "build": {
+    "appId": "com.losmanos.ushi-suki-koburobu",
+    "productName": "KoBurobu",
+    "directories": {
+      "output": "release/${version}",
+      "buildResources": "assets"
+    },
+    "files": [
+      "dist",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg"
+      ],
+      "icon": "assets/logo.png"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/logo.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/logo.png"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "LosManos",
+      "repo": "Ushi-Suki-KoBurobu"
+    }
   }
 }
