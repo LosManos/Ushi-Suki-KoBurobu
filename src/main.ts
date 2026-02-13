@@ -27,7 +27,7 @@ function createWindow() {
         titleBarStyle: 'hiddenInset',
         backgroundColor: '#0f172a', // Matches CSS --bg-dark
         icon: iconPath,
-        title: isDev ? 'Dev - KoBurobu' : 'KoBurobu'
+        title: isDev ? `Dev - KoBurobu v${app.getVersion()}` : `KoBurobu v${app.getVersion()}`
     });
 
     // On macOS, set the dock icon explicitly in dev mode
