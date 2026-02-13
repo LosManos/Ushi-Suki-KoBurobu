@@ -1,10 +1,10 @@
 {
   "name": "koburobu",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "This project is for handling blob storage in Azure",
   "main": "dist/main.js",
   "scripts": {
-    "compile": "tsc && cp src/index.html dist/index.html && cp src/style.css dist/style.css && mkdir -p dist/assets && cp -r assets/* dist/assets/",
+    "compile": "tsc && shx cp src/index.html dist/index.html && shx cp src/style.css dist/style.css && shx mkdir -p dist/assets && shx cp -r assets/* dist/assets/",
     "build": "npm run compile && electron-builder",
     "watch": "tsc -w",
     "start": "npm run compile && electron .",
@@ -17,6 +17,7 @@
     "@types/marked": "^5.0.2",
     "electron": "^40.0.0",
     "electron-builder": "^25.1.8",
+    "shx": "^0.4.0",
     "typescript": "^5.7.0"
   },
   "dependencies": {

@@ -33,6 +33,7 @@ jobs:
 
       - name: Compile
         run: npm run compile
+        shell: bash
 
       - name: Build and Publish
         env:
