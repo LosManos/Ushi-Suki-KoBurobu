@@ -1,6 +1,6 @@
 {
   "name": "koburobu",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "description": "This project is for handling blob storage in Azure",
   "main": "dist/main.js",
   "scripts": {
