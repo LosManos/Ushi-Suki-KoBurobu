@@ -249,6 +249,24 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:deletePrefix', async (_event, containerName: string, prefix: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            let count = 0;
+            // Azure doesn't have a "delete directory" operation, we must delete all blobs with the prefix
+            // For safety and performance, we'll use a batch-like approach if possible, or just iterate
+            for await (const blob of containerClient.listBlobsFlat({ prefix })) {
+                await containerClient.getBlobClient(blob.name).delete();
+                count++;
+            }
+            return { success: true, count };
+        } catch (error: any) {
+            console.error('Delete Prefix Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
     ipcMain.handle('azure:uploadBlob', async (_event, containerName: string) => {
         if (!blobServiceClient) return { success: false, error: 'Not connected' };
         try {

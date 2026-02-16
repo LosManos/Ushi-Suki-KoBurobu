@@ -706,7 +706,10 @@ async function showBlobProperties(blobName: string) {
 
     modalOkBtn.style.display = 'inline-block';
     modalCancelBtn.style.display = 'none';
-    modalConfirmDeleteBtn.style.display = 'none';
+    modalConfirmDeleteBtn.style.display = 'inline-block';
+    modalConfirmDeleteBtn.textContent = 'Delete';
+    modalConfirmDeleteBtn.disabled = false;
+    modalConfirmDeleteBtn.onclick = () => deleteBlobsUI([blobName]);
 
     modalOverlay.style.display = 'flex';
     modalContent.focus();
@@ -780,11 +783,19 @@ async function updateMetadataSidebar(blobName?: string) {
         if (selectedBlobs.size > 1) {
             metadataContent.innerHTML = `
                 <div class="empty-state">
-                    <div style="font-size: 2rem; margin-bottom: 1rem;">📦</div>
-                    <p>${selectedBlobs.size} items selected</p>
+                    <div style="font-size: 4rem; opacity: 0.3; margin-bottom: 1.5rem;">📦</div>
+                    <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1.5rem;">${selectedBlobs.size} items selected</p>
+                    <button id="sidebar-delete-multi-btn" class="btn btn-primary btn-sm" style="background-color: #ef4444; border-color: #ef4444; width: 100%;">
+                        <i data-lucide="trash-2" style="width: 16px; height: 16px; margin-right: 6px; vertical-align: middle;"></i> Delete items
+                    </button>
                 </div>
             `;
             metadataSidebar.classList.remove('hidden');
+            const sidebarDeleteBtn = document.getElementById('sidebar-delete-multi-btn');
+            if (sidebarDeleteBtn) {
+                sidebarDeleteBtn.onclick = () => deleteBlobsUI(Array.from(selectedBlobs));
+            }
+            refreshIcons();
         } else {
             metadataSidebar.classList.add('hidden');
             metadataContent.innerHTML = '';
@@ -845,7 +856,17 @@ async function updateMetadataSidebar(blobName?: string) {
                 ${renderRow('Last Modified', formatDateTime(props.lastModified))}
                 ${metadataHtml}
             </div>
+            <div class="sidebar-actions" style="margin-top: 1.5rem; display: flex; gap: 8px;">
+                <button id="sidebar-delete-btn" class="btn btn-secondary btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444; background: transparent;">
+                    <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> Delete
+                </button>
+            </div>
         `;
+        const sidebarDeleteBtn = document.getElementById('sidebar-delete-btn') as HTMLButtonElement;
+        if (sidebarDeleteBtn) {
+            sidebarDeleteBtn.onclick = () => deleteBlobsUI([activeBlobName]);
+        }
+        refreshIcons();
     } else {
         metadataContent.innerHTML = `<div class="text-danger">Error: ${result.error}</div>`;
     }
@@ -862,13 +883,16 @@ function isImage(name: string, contentType: string): boolean {
     return isImageContentType || (isOctetStream && isExtensionMatch);
 }
 
-async function deleteBlobsUI(blobNames: string[]) {
+async function deleteBlobsUI(blobNames: string[], isFolderDelete = false) {
     if (!currentContainer || blobNames.length === 0) return;
 
     lastActiveElement = document.activeElement as HTMLElement;
-    modalTitle.textContent = blobNames.length > 1 ? `Confirm Delete (${blobNames.length} items)` : 'Confirm Delete';
+    modalTitle.textContent = isFolderDelete ? 'Confirm Delete Folder' : (blobNames.length > 1 ? `Confirm Delete (${blobNames.length} items)` : 'Confirm Delete');
 
-    modalContent.innerHTML = `<p>Are you sure you want to delete ${blobNames.length > 1 ? 'these blobs' : 'this blob'}?</p>`;
+    modalContent.innerHTML = `<p>Are you sure you want to delete ${isFolderDelete ? `all blobs with prefix <strong>${blobNames[0]}</strong>` : (blobNames.length > 1 ? 'these blobs' : 'this blob')}?</p>`;
+    if (isFolderDelete) {
+        modalContent.innerHTML += `<p class="text-danger" style="margin-top: 0.5rem; font-size: 0.85rem;">This action is recursive and cannot be undone.</p>`;
+    }
 
     modalOkBtn.style.display = 'none';
     modalCancelBtn.style.display = 'inline-block';
@@ -881,7 +905,10 @@ async function deleteBlobsUI(blobNames: string[]) {
 
     modalConfirmDeleteBtn.onclick = async () => {
         modalConfirmDeleteBtn.disabled = true;
-        const result = blobNames.length === 1 ? await api.deleteBlob(currentContainer!, blobNames[0]) : await api.deleteBlobs(currentContainer!, blobNames);
+        const result = isFolderDelete
+            ? await api.deleteFolder(currentContainer!, blobNames[0])
+            : (blobNames.length === 1 ? await api.deleteBlob(currentContainer!, blobNames[0]) : await api.deleteBlobs(currentContainer!, blobNames));
+
         if (result.success) {
             closeModal();
             clearSelection();
@@ -1002,6 +1029,11 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         <span class="blob-size">${formatBytes(blob.size)}</span>
                         <span class="blob-date">${formatDateTime(blob.lastModified)}</span>
                     `}
+                    <span class="delete-trigger tooltip-bottom" 
+                        data-tooltip="Delete (Del / Alt+Backspace)" 
+                        title="Delete (Del / Alt+Backspace)">
+                        <i data-lucide="trash-2"></i>
+                    </span>
                 </div>
             `;
             li.onclick = (e) => {
@@ -1124,8 +1156,16 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                     }
                 }
             };
+            const deleteTrigger = li.querySelector('.delete-trigger') as HTMLElement;
+            if (deleteTrigger) {
+                deleteTrigger.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteBlobsUI([blob.name], blob.type === 'directory');
+                };
+            }
             blobList.appendChild(li);
         });
+        refreshIcons();
 
         if (result.hasMore) {
             const loadMoreLi = document.createElement('li');
@@ -1563,16 +1603,38 @@ window.addEventListener('keydown', (e) => {
         }
     }
 
-    // Delete Blobs (Delete key or Alt+Backspace)
-    if ((e.key === 'Delete' || (e.altKey && e.key === 'Backspace')) && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
-        if (blobView.style.display === 'block' && selectedBlobs.size > 0) {
-            e.preventDefault();
-            deleteBlobsUI(Array.from(selectedBlobs));
-            return;
+    // Delete/Backspace key detection for Blobs
+    const isDeleteKey = e.key === 'Delete' || e.code === 'Delete';
+    const isBackspaceKey = e.key === 'Backspace' || e.code === 'Backspace';
+    const isAltDelete = e.altKey && isBackspaceKey;
+
+    if ((isDeleteKey || isAltDelete) && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        if (blobView.style.display === 'block') {
+            let targetBlobs = Array.from(selectedBlobs);
+            let isFolder = false;
+
+            // If nothing is selected in the set, try to use the currently focused item
+            if (targetBlobs.length === 0) {
+                const focused = document.activeElement as HTMLElement;
+                const blobName = focused?.getAttribute('data-blob-name');
+                if (blobName) {
+                    targetBlobs = [blobName];
+                    isFolder = focused.getAttribute('data-blob-type') === 'directory';
+                }
+            }
+
+            if (targetBlobs.length > 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                deleteBlobsUI(targetBlobs, isFolder);
+                return;
+            }
         }
     }
 
-    if (e.key === 'Backspace' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+    // Navigate Up (Plain Backspace)
+    const isPlainBackspace = isBackspaceKey && !e.metaKey && !e.ctrlKey && !e.altKey && !e.shiftKey;
+    if (isPlainBackspace && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         if (blobView.style.display === 'block') {
             e.preventDefault();
             navigateUp();

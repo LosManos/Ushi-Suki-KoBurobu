@@ -32,6 +32,7 @@ The following shortcuts are available to speed up your workflow:
 | `Enter` | Open blob as image preview |
 | `Right-click` | Open blob as image preview |
 | `Del` / `Alt + Backspace` | Delete all marked/selected blobs (requires confirmation) |
+| `Delete button (on hover)` | Delete a single blob or folder (requires confirmation) |
 | `↑` / `↓` | Navigate through treeview, container or blob lists |
 | `Backspace` | Go back one level or to Container List |
 | `R` | Refresh current list (Containers or Blobs) |
