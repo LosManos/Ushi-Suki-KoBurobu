@@ -857,6 +857,9 @@ async function updateMetadataSidebar(blobName?: string) {
                 ${metadataHtml}
             </div>
             <div class="sidebar-actions" style="margin-top: 1.5rem; display: flex; gap: 8px;">
+                <button id="sidebar-info-btn" class="btn btn-secondary btn-sm" style="flex: 1;">
+                    <i data-lucide="info" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> Info
+                </button>
                 <button id="sidebar-delete-btn" class="btn btn-secondary btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444; background: transparent;">
                     <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> Delete
                 </button>
@@ -865,6 +868,10 @@ async function updateMetadataSidebar(blobName?: string) {
         const sidebarDeleteBtn = document.getElementById('sidebar-delete-btn') as HTMLButtonElement;
         if (sidebarDeleteBtn) {
             sidebarDeleteBtn.onclick = () => deleteBlobsUI([activeBlobName]);
+        }
+        const sidebarInfoBtn = document.getElementById('sidebar-info-btn') as HTMLButtonElement;
+        if (sidebarInfoBtn) {
+            sidebarInfoBtn.onclick = () => showBlobProperties(activeBlobName);
         }
         refreshIcons();
     } else {
@@ -1029,10 +1036,17 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         <span class="blob-size">${formatBytes(blob.size)}</span>
                         <span class="blob-date">${formatDateTime(blob.lastModified)}</span>
                     `}
+                </div>
+                <div class="blob-actions">
+                    <span class="info-trigger tooltip-bottom" 
+                        data-tooltip="Details (Alt+Enter)" 
+                        title="Details (Alt+Enter)">
+                        <i data-lucide="info" style="width: 16px; height: 16px;"></i>
+                    </span>
                     <span class="delete-trigger tooltip-bottom" 
                         data-tooltip="Delete (Del / Alt+Backspace)" 
                         title="Delete (Del / Alt+Backspace)">
-                        <i data-lucide="trash-2"></i>
+                        <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
                     </span>
                 </div>
             `;
@@ -1161,6 +1175,13 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                 deleteTrigger.onclick = (e) => {
                     e.stopPropagation();
                     deleteBlobsUI([blob.name], blob.type === 'directory');
+                };
+            }
+            const infoTrigger = li.querySelector('.info-trigger') as HTMLElement;
+            if (infoTrigger) {
+                infoTrigger.onclick = (e) => {
+                    e.stopPropagation();
+                    showBlobProperties(blob.name);
                 };
             }
             blobList.appendChild(li);

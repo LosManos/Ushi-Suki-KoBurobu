@@ -975,26 +975,46 @@ input[type="password"]:focus {
     }
 }
 
-.delete-trigger {
+.blob-actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.delete-trigger,
+.info-trigger {
     font-size: 0.9rem;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.2s;
-    opacity: 0.3;
-    padding: 4px 8px;
-    border-radius: 4px;
+    opacity: 0.6;
+    padding: 6px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid transparent;
+    flex-shrink: 0;
 }
 
-.list-item:hover .delete-trigger {
-    opacity: 0.7;
+.list-item:hover .delete-trigger,
+.list-item:hover .info-trigger {
+    opacity: 0.9;
+    border-color: var(--glass-border);
 }
 
 .delete-trigger:hover {
     color: #ef4444 !important;
-    background: rgba(239, 68, 68, 0.1);
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4) !important;
+    opacity: 1 !important;
+}
+
+.info-trigger:hover {
+    color: var(--accent) !important;
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.4) !important;
     opacity: 1 !important;
 }
 
