@@ -29,6 +29,7 @@ The following shortcuts are available to speed up your workflow:
 | `Space` | Toggle mark/selection of focused blob |
 | `Click` | Mark/selection of blob |
 | `Double-click` / `Alt + Enter` | Show blob properties (meta data) |
+| `Alt + D` | Download blob (to local filesystem) |
 | `Enter` | Open blob as image preview |
 | `Right-click` | Open blob as image preview |
 | `Del` / `Alt + Backspace` | Delete all marked/selected blobs (requires confirmation) |

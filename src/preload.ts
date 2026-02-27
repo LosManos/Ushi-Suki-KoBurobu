@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.invoke('azure:getBlobProperties', containerName, blobName),
     getBlobData: (containerName: string, blobName: string) =>
         ipcRenderer.invoke('azure:getBlobData', containerName, blobName),
+    downloadBlob: (containerName: string, blobName: string) =>
+        ipcRenderer.invoke('azure:downloadBlob', containerName, blobName),
     deleteBlob: (containerName: string, blobName: string) =>
         ipcRenderer.invoke('azure:deleteBlob', containerName, blobName),
     deleteBlobs: (containerName: string, blobNames: string[]) =>

@@ -267,6 +267,29 @@ app.whenReady().then(() => {
         }
     });
 
+    ipcMain.handle('azure:downloadBlob', async (_event, containerName: string, blobName: string) => {
+        if (!blobServiceClient) return { success: false, error: 'Not connected' };
+        try {
+            const { dialog } = require('electron');
+            const containerClient = blobServiceClient.getContainerClient(containerName);
+            const blobClient = containerClient.getBlobClient(blobName);
+
+            const result = await dialog.showSaveDialog({
+                title: 'Download Blob',
+                defaultPath: path.basename(blobName),
+                buttonLabel: 'Download'
+            });
+
+            if (result.canceled || !result.filePath) return { success: true, canceled: true };
+
+            await blobClient.downloadToFile(result.filePath);
+            return { success: true, filePath: result.filePath };
+        } catch (error: any) {
+            console.error('Download Blob Error:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
     ipcMain.handle('azure:uploadBlob', async (_event, containerName: string) => {
         if (!blobServiceClient) return { success: false, error: 'Not connected' };
         try {

@@ -58,6 +58,7 @@ const modalContent = document.getElementById('modal-content') as HTMLElement;
 const modalOkBtn = document.getElementById('modal-ok-btn') as HTMLButtonElement;
 const modalCancelBtn = document.getElementById('modal-cancel-btn') as HTMLButtonElement;
 const modalConfirmDeleteBtn = document.getElementById('modal-confirm-delete-btn') as HTMLButtonElement;
+const modalDownloadBtn = document.getElementById('modal-download-btn') as HTMLButtonElement;
 const metadataSidebar = document.getElementById('metadata-sidebar') as HTMLElement;
 const metadataContent = document.getElementById('metadata-content') as HTMLElement;
 const closeMetadataBtn = document.getElementById('close-metadata-btn') as HTMLButtonElement;
@@ -711,6 +712,9 @@ async function showBlobProperties(blobName: string) {
     modalConfirmDeleteBtn.disabled = false;
     modalConfirmDeleteBtn.onclick = () => deleteBlobsUI([blobName]);
 
+    modalDownloadBtn.style.display = 'inline-block';
+    modalDownloadBtn.onclick = () => downloadBlobUI(blobName);
+
     modalOverlay.style.display = 'flex';
     modalContent.focus();
 
@@ -860,6 +864,9 @@ async function updateMetadataSidebar(blobName?: string) {
                 <button id="sidebar-info-btn" class="btn btn-secondary btn-sm" style="flex: 1;">
                     <i data-lucide="info" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> Info
                 </button>
+                <button id="sidebar-download-btn" class="btn btn-secondary btn-sm" style="flex: 1;">
+                    <i data-lucide="download" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> Download
+                </button>
                 <button id="sidebar-delete-btn" class="btn btn-secondary btn-sm" style="flex: 1; border-color: #ef4444; color: #ef4444; background: transparent;">
                     <i data-lucide="trash-2" style="width: 14px; height: 14px; margin-right: 4px; vertical-align: middle;"></i> Delete
                 </button>
@@ -868,6 +875,10 @@ async function updateMetadataSidebar(blobName?: string) {
         const sidebarDeleteBtn = document.getElementById('sidebar-delete-btn') as HTMLButtonElement;
         if (sidebarDeleteBtn) {
             sidebarDeleteBtn.onclick = () => deleteBlobsUI([activeBlobName]);
+        }
+        const sidebarDownloadBtn = document.getElementById('sidebar-download-btn') as HTMLButtonElement;
+        if (sidebarDownloadBtn) {
+            sidebarDownloadBtn.onclick = () => downloadBlobUI(activeBlobName);
         }
         const sidebarInfoBtn = document.getElementById('sidebar-info-btn') as HTMLButtonElement;
         if (sidebarInfoBtn) {
@@ -890,6 +901,14 @@ function isImage(name: string, contentType: string): boolean {
     return isImageContentType || (isOctetStream && isExtensionMatch);
 }
 
+async function downloadBlobUI(blobName: string) {
+    if (!currentContainer) return;
+    const result = await api.downloadBlob(currentContainer, blobName);
+    if (!result.success) {
+        alert('Download failed: ' + result.error);
+    }
+}
+
 async function deleteBlobsUI(blobNames: string[], isFolderDelete = false) {
     if (!currentContainer || blobNames.length === 0) return;
 
@@ -903,6 +922,7 @@ async function deleteBlobsUI(blobNames: string[], isFolderDelete = false) {
 
     modalOkBtn.style.display = 'none';
     modalCancelBtn.style.display = 'inline-block';
+    modalDownloadBtn.style.display = 'none';
     modalConfirmDeleteBtn.style.display = 'inline-block';
     modalConfirmDeleteBtn.textContent = 'Delete';
     modalConfirmDeleteBtn.disabled = false;
@@ -939,6 +959,7 @@ async function showBlobImage(blobName: string, contentType: string) {
 
     modalOkBtn.style.display = 'inline-block';
     modalCancelBtn.style.display = 'none';
+    modalDownloadBtn.style.display = 'none';
     modalConfirmDeleteBtn.style.display = 'none';
 
     modalOverlay.style.display = 'flex';
@@ -1043,6 +1064,11 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         title="Details (Alt+Enter)">
                         <i data-lucide="info" style="width: 16px; height: 16px;"></i>
                     </span>
+                    <span class="download-trigger tooltip-bottom" 
+                        data-tooltip="Download (Alt+D)" 
+                        title="Download (Alt+D)">
+                        <i data-lucide="download" style="width: 16px; height: 16px;"></i>
+                    </span>
                     <span class="delete-trigger tooltip-bottom" 
                         data-tooltip="Delete (Del / Alt+Backspace)" 
                         title="Delete (Del / Alt+Backspace)">
@@ -1096,6 +1122,11 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                         } else {
                             showBlobProperties(blob.name);
                         }
+                    }
+                } else if (e.key === 'd' && e.altKey) {
+                    e.preventDefault();
+                    if (blob.type !== 'directory') {
+                        downloadBlobUI(blob.name);
                     }
                 } else if (e.key === ' ') {
                     e.preventDefault();
@@ -1175,6 +1206,13 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
                 deleteTrigger.onclick = (e) => {
                     e.stopPropagation();
                     deleteBlobsUI([blob.name], blob.type === 'directory');
+                };
+            }
+            const downloadTrigger = li.querySelector('.download-trigger') as HTMLElement;
+            if (downloadTrigger) {
+                downloadTrigger.onclick = (e) => {
+                    e.stopPropagation();
+                    downloadBlobUI(blob.name);
                 };
             }
             const infoTrigger = li.querySelector('.info-trigger') as HTMLElement;
@@ -1294,6 +1332,7 @@ async function openSettings() {
     modalOkBtn.style.display = 'inline-block';
     modalOkBtn.textContent = 'Done';
     modalCancelBtn.style.display = 'none';
+    modalDownloadBtn.style.display = 'none';
     modalConfirmDeleteBtn.style.display = 'none';
 
     const version = await api.getVersion();
@@ -1385,6 +1424,7 @@ async function openManual() {
     modalOkBtn.style.display = 'inline-block';
     modalOkBtn.textContent = 'Close';
     modalCancelBtn.style.display = 'none';
+    modalDownloadBtn.style.display = 'none';
     modalConfirmDeleteBtn.style.display = 'none';
 
     modalContent.innerHTML = '<div class="text-secondary">Loading manual...</div>';
