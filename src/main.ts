@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, shell, safeStorage, nativeImage } from 'electron';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as https from 'https';
 import { BlobServiceClient } from '@azure/storage-blob';
 
 let blobServiceClient: BlobServiceClient | null = null;
@@ -338,6 +339,56 @@ app.whenReady().then(() => {
 
     ipcMain.handle('app:getVersion', () => {
         return app.getVersion();
+    });
+
+    ipcMain.handle('app:checkUpdates', async () => {
+        return new Promise((resolve) => {
+            const options = {
+                hostname: 'api.github.com',
+                path: '/repos/LosManos/Ushi-Suki-KoBurobu/releases/latest',
+                headers: {
+                    'User-Agent': 'KoBurobu-App'
+                }
+            };
+
+            https.get(options, (res) => {
+                let data = '';
+                res.on('data', (chunk) => { data += chunk; });
+                res.on('end', () => {
+                    try {
+                        const release = JSON.parse(data);
+                        const latestVersion = release.tag_name.replace(/^v/, '');
+                        const currentVersion = app.getVersion();
+
+                        // Simple semver comparison (ignoring edge cases like pre-releases for now)
+                        const latestParts = latestVersion.split('.').map(Number);
+                        const currentParts = currentVersion.split('.').map(Number);
+
+                        let hasNewer = false;
+                        for (let i = 0; i < 3; i++) {
+                            if (latestParts[i] > currentParts[i]) {
+                                hasNewer = true;
+                                break;
+                            } else if (latestParts[i] < currentParts[i]) {
+                                break;
+                            }
+                        }
+
+                        resolve({
+                            success: true,
+                            latestVersion,
+                            currentVersion,
+                            hasNewer,
+                            url: release.html_url
+                        });
+                    } catch (error) {
+                        resolve({ success: false, error: 'Failed to parse update information' });
+                    }
+                });
+            }).on('error', (error) => {
+                resolve({ success: false, error: error.message });
+            });
+        });
     });
 
     ipcMain.handle('utils:readManual', async () => {

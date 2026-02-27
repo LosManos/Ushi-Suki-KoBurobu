@@ -49,6 +49,7 @@ The following shortcuts are available to speed up your workflow:
 | `F1` / `Cmd + ?` | Open this Manual |
 | `Esc` | Bails out of dialogues and closes menus |
 | `Enter` | Updates/confirms in dialogues or closes info-only dialogues |
+| `U` | Check for newer version (in About dialogue) |
 | `Backspace` | Navigate up one level or switch to Containers View (if at root) |
 
 ## Navigation

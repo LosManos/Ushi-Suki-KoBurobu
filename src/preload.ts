@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openSearchHistoryFile: () => ipcRenderer.invoke('utils:openSearchHistoryFile'),
     readManual: () => ipcRenderer.invoke('utils:readManual'),
     getVersion: () => ipcRenderer.invoke('app:getVersion'),
+    checkUpdates: () => ipcRenderer.invoke('app:checkUpdates'),
     uploadBlob: (containerName: string) => ipcRenderer.invoke('azure:uploadBlob', containerName),
     saveConnection: (name: string, connectionString: string) => ipcRenderer.invoke('storage:saveConnection', name, connectionString),
     getConnections: () => ipcRenderer.invoke('storage:getConnections'),

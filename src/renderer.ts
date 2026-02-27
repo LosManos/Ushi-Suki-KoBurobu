@@ -1340,7 +1340,7 @@ async function updateBlobList(isLoadMore = false, focusItem?: string | boolean) 
     }
 }
 
-async function openSettings() {
+async function openSettings(scrollToAbout = false) {
     lastActiveElement = document.activeElement as HTMLElement;
     modalTitle.textContent = 'Settings';
     modal.classList.remove('large');
@@ -1389,7 +1389,7 @@ async function openSettings() {
                     <div class="about-version">v${version}</div>
                     <div class="settings-description">Premium Azure Blob Storage Explorer</div>
                     <div style="margin-top: 0.5rem;">
-                        <span id="btn-check-updates" class="btn-link-alt">Check for Updates</span>
+                        <span id="btn-check-updates" class="btn-link-alt" title="Check for Updates (U)">Check for Updates</span>
                     </div>
                 </div>
             </div>
@@ -1426,11 +1426,49 @@ async function openSettings() {
         api.openPath('manual.md');
     };
 
-    btnCheckUpdates.onclick = () => {
-        api.openExternal('https://github.com/njord/KoBurobu');
-    };
+    async function performUpdateCheck() {
+        btnCheckUpdates.textContent = 'Checking...';
+        btnCheckUpdates.style.opacity = '0.5';
+        btnCheckUpdates.style.pointerEvents = 'none';
+
+        const result = await api.checkUpdates();
+
+        btnCheckUpdates.style.opacity = '1';
+        btnCheckUpdates.style.pointerEvents = 'auto';
+
+        if (result.success) {
+            if (result.hasNewer) {
+                btnCheckUpdates.innerHTML = `Newer version available: <span class="text-success" style="font-weight: bold; text-decoration: underline; cursor: pointer;">v${result.latestVersion}</span>`;
+                btnCheckUpdates.onclick = () => api.openExternal(result.url);
+            } else {
+                btnCheckUpdates.textContent = `You are on the latest version (v${result.currentVersion})`;
+                setTimeout(() => {
+                    btnCheckUpdates.textContent = 'Check for Updates';
+                    btnCheckUpdates.onclick = performUpdateCheck;
+                }, 3000);
+            }
+        } else {
+            btnCheckUpdates.textContent = 'Check failed. Try again?';
+            console.error('Update check failed:', result.error);
+            setTimeout(() => {
+                btnCheckUpdates.textContent = 'Check for Updates';
+                btnCheckUpdates.onclick = performUpdateCheck;
+            }, 3000);
+        }
+    }
+
+    btnCheckUpdates.onclick = performUpdateCheck;
 
     modalContent.focus();
+
+    if (scrollToAbout) {
+        setTimeout(() => {
+            const aboutCard = modalContent.querySelector('.about-card');
+            if (aboutCard) {
+                aboutCard.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
+    }
 }
 
 async function openManual() {
@@ -1464,8 +1502,8 @@ sidebarHamburger.addEventListener('click', (e) => {
 });
 
 document.addEventListener('click', () => hamburgerMenu.style.display = 'none');
-menuSettings.addEventListener('click', openSettings);
-menuAbout.addEventListener('click', openSettings);
+menuSettings.addEventListener('click', () => openSettings(false));
+menuAbout.addEventListener('click', () => openSettings(true));
 menuManual.addEventListener('click', openManual);
 menuConnections.addEventListener('click', () => {
     api.openConnectionsFile();
@@ -1642,6 +1680,15 @@ window.addEventListener('keydown', (e) => {
             return;
         }
 
+        if (e.key.toLowerCase() === 'u') {
+            const btnCheckUpdates = document.getElementById('btn-check-updates');
+            if (btnCheckUpdates && btnCheckUpdates.style.pointerEvents !== 'none') {
+                e.preventDefault();
+                btnCheckUpdates.click();
+                return;
+            }
+        }
+
         if (e.key === 'Enter') {
             // Dialogues close with Enter if it's an "update" (modalConfirmDeleteBtn) or info-only (modalOkBtn)
             if (modalConfirmDeleteBtn.style.display !== 'none' && !modalConfirmDeleteBtn.disabled) {
@@ -1661,7 +1708,7 @@ window.addEventListener('keydown', (e) => {
         // This ensures "When a modal dialogue is visible, it is the only one receiving keyboard strokes."
         const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement).tagName);
         // Only allow basic navigation and selection within the modal
-        const allowedKeys = ['Tab', 'Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', ' '];
+        const allowedKeys = ['Tab', 'Enter', 'Escape', 'ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', ' ', 'u', 'U'];
         if (!isInput && !allowedKeys.includes(e.key)) {
             e.preventDefault();
         }
@@ -1845,5 +1892,18 @@ window.addEventListener('load', async () => {
     const version = await api.getVersion();
     if (footerVersion) {
         footerVersion.textContent = `v${version}`;
+        footerVersion.title = 'View Version & Settings';
+
+        // FOOTER VERSION CLICK: This should open the about dialogue.
+        // Rule: No keyboard shortcuts for this part, intentionally left as click-only.
+        footerVersion.onclick = () => openSettings(true);
     }
+
+    // Check for updates on startup
+    api.checkUpdates().then((result: any) => {
+        if (result.success && result.hasNewer && footerVersion) {
+            footerVersion.classList.add('update-available');
+            footerVersion.title = `New version available: v${result.latestVersion} (Click to view)`;
+        }
+    });
 });
