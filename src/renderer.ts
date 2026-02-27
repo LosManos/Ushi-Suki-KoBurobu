@@ -897,8 +897,21 @@ function isImage(name: string, contentType: string): boolean {
     const lowerName = name.toLowerCase();
     const isExtensionMatch = IMAGE_EXTENSIONS.some(ext => lowerName.endsWith(ext));
     const isImageContentType = contentType && contentType.startsWith('image/');
-    const isOctetStream = contentType === 'application/octet-stream';
-    return isImageContentType || (isOctetStream && isExtensionMatch);
+
+    // If it starts with image/, it's an image.
+    if (isImageContentType) return true;
+
+    // If the extension matches, we consider it an image if the content-type is generic 
+    // or missing, or if it's an SVG (which often has varied content types).
+    if (isExtensionMatch) {
+        return !contentType ||
+            contentType === 'application/octet-stream' ||
+            contentType === 'blob' ||
+            contentType === 'text/plain' ||
+            contentType.includes('xml');
+    }
+
+    return false;
 }
 
 async function downloadBlobUI(blobName: string) {
@@ -968,7 +981,11 @@ async function showBlobImage(blobName: string, contentType: string) {
     const result = await api.getBlobData(currentContainer, blobName);
 
     if (result.success) {
-        const blob = new Blob([result.data], { type: contentType });
+        let type = contentType;
+        if (blobName.toLowerCase().endsWith('.svg')) {
+            type = 'image/svg+xml';
+        }
+        const blob = new Blob([result.data], { type });
         const url = URL.createObjectURL(blob);
         modalContent.innerHTML = `<img src="${url}" style="max-width: 100%; display: block;" />`;
         modalContent.focus();
