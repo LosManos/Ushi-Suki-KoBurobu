@@ -15,7 +15,7 @@
   "license": "LGPLv3+NoEvil",
   "devDependencies": {
     "electron": "^40.4.0",
-    "electron-builder": "^26.7.0",
+    "electron-builder": "^26.15.3",
     "shx": "^0.4.0",
     "typescript": "^5.9.3"
   },
